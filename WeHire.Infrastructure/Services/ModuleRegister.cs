@@ -22,6 +22,7 @@ using WeHire.Infrastructure.Services.GoogleCalendarServices;
 using WeHire.Infrastructure.Services.HiringRequestServices;
 using WeHire.Infrastructure.Services.InterviewServices;
 using WeHire.Infrastructure.Services.LevelServices;
+using WeHire.Infrastructure.Services.NotificationServices;
 using WeHire.Infrastructure.Services.PaymentServices;
 using WeHire.Infrastructure.Services.PercentCalculatServices;
 using WeHire.Infrastructure.Services.PostedTimeCalculatorService;
@@ -65,6 +66,7 @@ namespace WeHire.Infrastructure.Services
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IPostedTimeCalculatorService, PostedTimeCalculatorService.PostedTimeCalculatorService>();
             services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
+            services.AddScoped<INotificationService, NotificationService>();
         }
     }
 }

@@ -81,11 +81,25 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("ChangeStatusTask")]
+        [HttpPut("Approval")]
         [ProducesResponseType(typeof(ApiResponse<GetAssignTaskDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusTask(ChangeStatusTaskDTO requestBody)
+        public async Task<IActionResult> ApprovalTask(ApprovalStatusTask requestBody)
         {
-            var result = await _assignTaskService.ChangeStatusTaskAsync(requestBody);
+            var result = await _assignTaskService.ApprovalTaskAsync(requestBody);
+
+            return Ok(new ApiResponse<GetAssignTaskDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+
+        [HttpPut("Finished")]
+        [ProducesResponseType(typeof(ApiResponse<GetAssignTaskDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FinishedTask(int taskId)
+        {
+            var result = await _assignTaskService.FinishTaskAsync(taskId);
 
             return Ok(new ApiResponse<GetAssignTaskDTO>()
             {

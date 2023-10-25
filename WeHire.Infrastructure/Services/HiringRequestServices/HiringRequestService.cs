@@ -17,6 +17,7 @@ using WeHire.Application.Utilities.Helper.Searching;
 using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
+using WeHire.Infrastructure.Services.NotificationServices;
 using WeHire.Infrastructure.Services.PostedTimeCalculatorService;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
@@ -32,12 +33,16 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
     public class HiringRequestService : IHiringRequestService
     {
         private readonly IPostedTimeCalculatorService _postedTimeCalculatorService;
+        private readonly INotificationService _notificationService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public HiringRequestService(IUnitOfWork unitOfWork, IMapper mapper, IPostedTimeCalculatorService postedTimeCalculatorService)
+        public HiringRequestService(IUnitOfWork unitOfWork, IMapper mapper, 
+                                    IPostedTimeCalculatorService postedTimeCalculatorService,
+                                    INotificationService notificationService)
         {
             _postedTimeCalculatorService = postedTimeCalculatorService;
+            _notificationService = notificationService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -152,6 +157,11 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.REQUEST_BODY, ErrorMessage.NULL_REQUEST_BODY);
 
             await IsExistCompany(requestBody.CompanyId);
+            var hr = _unitOfWork.CompanyRepository.Get(c => c.CompanyId == requestBody.CompanyId).AsNoTracking()
+                                                  .Include(c => c.User)
+                                                  .Select(c => c.User)
+                                                  .SingleOrDefault();
+
             var newRequest = _mapper.Map<HiringRequest>(requestBody);
             using var transaction = _unitOfWork.BeginTransaction();
             try
@@ -161,6 +171,13 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 newRequest.BookMark = false;
                 newRequest.Status = requestBody.isSaved ? newRequest.Status = (int)HiringRequestStatus.Saved
                                                         : newRequest.Status = (int)HiringRequestStatus.WaitingApproval;
+                if (requestBody.isSaved) newRequest.Status = (int)HiringRequestStatus.Saved;
+                else
+                {
+                    newRequest.Status = (int)HiringRequestStatus.WaitingApproval;
+                    await _notificationService.SendManagerNotificationAsync(hr!.UserId, NotificationTypeString.DEVELOPER_RECRUITMENT);
+                }
+
                 await HandleLevels(requestBody.LevelRequireId);
                 await HandleTypes(requestBody.TypeRequireId);
                 await HandleSkills(newRequest, requestBody.SkillIds);

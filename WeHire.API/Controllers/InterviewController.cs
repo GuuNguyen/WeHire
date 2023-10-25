@@ -45,15 +45,15 @@ namespace WeHire.API.Controllers
 
         [HttpGet("ByHR")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetInterviewDetail>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllInterviewByHR(int companyId,
+        public async Task<IActionResult> GetAllInterviewByHR(int? companyId,
                                                             [FromQuery] int? requestId,
                                                             [FromQuery] PagingQuery query,
                                                             [FromQuery] SearchInterviewDTO searchKey)
         {
             var result = _interviewService.GetInterviewsByCompany(companyId, requestId, query, searchKey);
 
-            var total = searchKey.AreAllPropertiesNull() ? await _interviewService.GetTotalInterviewsAsync(companyId) 
-                                                         : result.Count;
+            var total = !requestId.HasValue && searchKey.AreAllPropertiesNull() ? await _interviewService.GetTotalInterviewsAsync(companyId) 
+                                                                                : result.Count;
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,
@@ -68,7 +68,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpGet("{InterviewId}")]
+        [HttpGet("{interviewId}")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewWithDev>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewById(int interviewId)
         {

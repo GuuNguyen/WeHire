@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WeHire.Infrastructure.Services.PostedTimeCalculatorService
+namespace WeHire.Application.Utilities.Helper.PostedTime
 {
-    public class PostedTimeCalculatorService : IPostedTimeCalculatorService
+    public static class PostedTimeCalculateHelper
     {
-        public string GetElapsedTimeSinceCreation(DateTime? createdAt)
+        public static string GetElapsedTimeSinceCreation(DateTime? createdAt)
         {
             if (createdAt.HasValue)
             {
@@ -27,7 +27,7 @@ namespace WeHire.Infrastructure.Services.PostedTimeCalculatorService
                 {
                     return $"{(int)timeDifference.TotalHours} hours ago";
                 }
-                else if (timeDifference.TotalDays < 2)
+                else if (timeDifference.TotalDays < 7)
                 {
                     return $"{(int)timeDifference.TotalDays} days ago";
                 }

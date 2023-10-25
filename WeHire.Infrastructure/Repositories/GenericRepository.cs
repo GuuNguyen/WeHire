@@ -122,7 +122,5 @@ namespace WeHire.Entity.Repositories
             var entity = await _dbSet.FindAsync(id);
             _dbSet.Remove(entity);
         }
-
-        
     }
 }

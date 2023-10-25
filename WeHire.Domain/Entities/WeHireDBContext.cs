@@ -45,12 +45,13 @@ namespace WeHire.Domain.Entities
         public virtual DbSet<Type> Types { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<UserDevice> UserDevices { get; set; }
+        public virtual DbSet<UserNotification> UserNotifications { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                //optionsBuilder.UseSqlServer("server = wehiredb.cfe5z7p8gf69.ap-southeast-2.rds.amazonaws.com,1433; database = WeHireDB;uid=admin;pwd=wehiredatabase;TrustServerCertificate=True;");
                 optionsBuilder.UseSqlServer("server = (local); database = WeHireDB;uid=sa;pwd=1;TrustServerCertificate=True;");
             }
         }
@@ -92,13 +93,13 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.Agreements)
                     .HasForeignKey(d => d.RequestId)
-                    .HasConstraintName("FK__Agreement__Reque__74AE54BC");
+                    .HasConstraintName("FK__Agreement__Reque__778AC167");
             });
 
             modelBuilder.Entity<AssignTask>(entity =>
             {
                 entity.HasKey(e => e.TaskId)
-                    .HasName("PK__AssignTa__7C6949B11CAEA875");
+                    .HasName("PK__AssignTa__7C6949B13207F2DA");
 
                 entity.ToTable("AssignTask");
 
@@ -113,20 +114,20 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.AssignTasks)
                     .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK__AssignTas__UserI__0D7A0286");
+                    .HasConstraintName("FK__AssignTas__UserI__10566F31");
             });
 
             modelBuilder.Entity<CompanyPartner>(entity =>
             {
                 entity.HasKey(e => e.CompanyId)
-                    .HasName("PK__CompanyP__2D971CACEFBE92CA");
+                    .HasName("PK__CompanyP__2D971CACD9C4E788");
 
                 entity.ToTable("CompanyPartner");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E380FE86AE0")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E381673B2B3")
                     .IsUnique();
 
-                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DBD35573AF")
+                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DB2A422535")
                     .IsUnique();
 
                 entity.Property(e => e.Address).HasMaxLength(300);
@@ -152,7 +153,7 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.CompanyPartners)
                     .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK__CompanyPa__UserI__5DCAEF64");
+                    .HasConstraintName("FK__CompanyPa__UserI__60A75C0F");
             });
 
             modelBuilder.Entity<Cv>(entity =>
@@ -170,14 +171,14 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.Cvs)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Cv__DeveloperId__0A9D95DB");
+                    .HasConstraintName("FK__Cv__DeveloperId__0D7A0286");
             });
 
             modelBuilder.Entity<Developer>(entity =>
             {
                 entity.ToTable("Developer");
 
-                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D5317905BF")
+                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D5D6568B07")
                     .IsUnique();
 
                 entity.Property(e => e.AverageSalary).HasColumnType("money");
@@ -189,33 +190,33 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.EmploymentType)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.EmploymentTypeId)
-                    .HasConstraintName("FK__Developer__Emplo__02084FDA");
+                    .HasConstraintName("FK__Developer__Emplo__04E4BC85");
 
                 entity.HasOne(d => d.Gender)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.GenderId)
-                    .HasConstraintName("FK__Developer__Gende__00200768");
+                    .HasConstraintName("FK__Developer__Gende__02FC7413");
 
                 entity.HasOne(d => d.Level)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.LevelId)
-                    .HasConstraintName("FK__Developer__Level__7F2BE32F");
+                    .HasConstraintName("FK__Developer__Level__02084FDA");
 
                 entity.HasOne(d => d.ScheduleType)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.ScheduleTypeId)
-                    .HasConstraintName("FK__Developer__Sched__01142BA1");
+                    .HasConstraintName("FK__Developer__Sched__03F0984C");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK__Developer__UserI__7E37BEF6");
+                    .HasConstraintName("FK__Developer__UserI__01142BA1");
             });
 
             modelBuilder.Entity<DeveloperSkill>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.SkillId })
-                    .HasName("PK__Develope__B3F245E92C22D06E");
+                    .HasName("PK__Develope__B3F245E9C9B93896");
 
                 entity.ToTable("DeveloperSkill");
 
@@ -223,19 +224,19 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.DeveloperSkills)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Devel__18EBB532");
+                    .HasConstraintName("FK__Developer__Devel__1BC821DD");
 
                 entity.HasOne(d => d.Skill)
                     .WithMany(p => p.DeveloperSkills)
                     .HasForeignKey(d => d.SkillId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Skill__19DFD96B");
+                    .HasConstraintName("FK__Developer__Skill__1CBC4616");
             });
 
             modelBuilder.Entity<DeveloperTaskAssignment>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.TaskId })
-                    .HasName("PK__Develope__D9CED86A90BE2CD0");
+                    .HasName("PK__Develope__D9CED86AB26FE0C0");
 
                 entity.ToTable("DeveloperTaskAssignment");
 
@@ -243,19 +244,19 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.DeveloperTaskAssignments)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Devel__10566F31");
+                    .HasConstraintName("FK__Developer__Devel__1332DBDC");
 
                 entity.HasOne(d => d.Task)
                     .WithMany(p => p.DeveloperTaskAssignments)
                     .HasForeignKey(d => d.TaskId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__TaskI__114A936A");
+                    .HasConstraintName("FK__Developer__TaskI__14270015");
             });
 
             modelBuilder.Entity<DeveloperType>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.TypeId })
-                    .HasName("PK__Develope__9B1EBCCA1ADAA208");
+                    .HasName("PK__Develope__9B1EBCCA53050B96");
 
                 entity.ToTable("DeveloperType");
 
@@ -263,13 +264,13 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.DeveloperTypes)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Devel__1CBC4616");
+                    .HasConstraintName("FK__Developer__Devel__1F98B2C1");
 
                 entity.HasOne(d => d.Type)
                     .WithMany(p => p.DeveloperTypes)
                     .HasForeignKey(d => d.TypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__TypeI__1DB06A4F");
+                    .HasConstraintName("FK__Developer__TypeI__208CD6FA");
             });
 
             modelBuilder.Entity<Education>(entity =>
@@ -291,7 +292,7 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.Educations)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Education__Devel__04E4BC85");
+                    .HasConstraintName("FK__Education__Devel__07C12930");
             });
 
             modelBuilder.Entity<EmploymentType>(entity =>
@@ -316,7 +317,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<HiringRequest>(entity =>
             {
                 entity.HasKey(e => e.RequestId)
-                    .HasName("PK__HiringRe__33A8517AF3E2B751");
+                    .HasName("PK__HiringRe__33A8517A62A6336B");
 
                 entity.ToTable("HiringRequest");
 
@@ -335,27 +336,27 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Company)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.CompanyId)
-                    .HasConstraintName("FK__HiringReq__Compa__6E01572D");
+                    .HasConstraintName("FK__HiringReq__Compa__70DDC3D8");
 
                 entity.HasOne(d => d.EmploymentType)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.EmploymentTypeId)
-                    .HasConstraintName("FK__HiringReq__Emplo__71D1E811");
+                    .HasConstraintName("FK__HiringReq__Emplo__74AE54BC");
 
                 entity.HasOne(d => d.LevelRequire)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.LevelRequireId)
-                    .HasConstraintName("FK__HiringReq__Level__6FE99F9F");
+                    .HasConstraintName("FK__HiringReq__Level__72C60C4A");
 
                 entity.HasOne(d => d.ScheduleType)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.ScheduleTypeId)
-                    .HasConstraintName("FK__HiringReq__Sched__70DDC3D8");
+                    .HasConstraintName("FK__HiringReq__Sched__73BA3083");
 
                 entity.HasOne(d => d.TypeRequire)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.TypeRequireId)
-                    .HasConstraintName("FK__HiringReq__TypeR__6EF57B66");
+                    .HasConstraintName("FK__HiringReq__TypeR__71D1E811");
             });
 
             modelBuilder.Entity<Interview>(entity =>
@@ -373,17 +374,17 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.AssignStaff)
                     .WithMany(p => p.InterviewAssignStaffs)
                     .HasForeignKey(d => d.AssignStaffId)
-                    .HasConstraintName("FK__Interview__Assig__151B244E");
+                    .HasConstraintName("FK__Interview__Assig__17F790F9");
 
                 entity.HasOne(d => d.Interviewer)
                     .WithMany(p => p.InterviewInterviewers)
                     .HasForeignKey(d => d.InterviewerId)
-                    .HasConstraintName("FK__Interview__Inter__14270015");
+                    .HasConstraintName("FK__Interview__Inter__17036CC0");
 
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.Interviews)
                     .HasForeignKey(d => d.RequestId)
-                    .HasConstraintName("FK__Interview__Reque__160F4887");
+                    .HasConstraintName("FK__Interview__Reque__18EBB532");
             });
 
             modelBuilder.Entity<Level>(entity =>
@@ -411,15 +412,10 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.NotiType)
                     .WithMany(p => p.Notifications)
                     .HasForeignKey(d => d.NotiTypeId)
-                    .HasConstraintName("FK__Notificat__NotiT__571DF1D5");
-
-                entity.HasOne(d => d.Receiver)
-                    .WithMany(p => p.NotificationReceivers)
-                    .HasForeignKey(d => d.ReceiverId)
-                    .HasConstraintName("FK__Notificat__Recei__5629CD9C");
+                    .HasConstraintName("FK__Notificat__NotiT__5629CD9C");
 
                 entity.HasOne(d => d.Sender)
-                    .WithMany(p => p.NotificationSenders)
+                    .WithMany(p => p.Notifications)
                     .HasForeignKey(d => d.SenderId)
                     .HasConstraintName("FK__Notificat__Sende__5535A963");
             });
@@ -427,7 +423,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<NotificationType>(entity =>
             {
                 entity.HasKey(e => e.NotiTypeId)
-                    .HasName("PK__Notifica__54F5A301482B0455");
+                    .HasName("PK__Notifica__54F5A3019BA76A59");
 
                 entity.ToTable("NotificationType");
 
@@ -453,7 +449,7 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.ProfessionalExperiences)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Professio__Devel__07C12930");
+                    .HasConstraintName("FK__Professio__Devel__0A9D95DB");
             });
 
             modelBuilder.Entity<Report>(entity =>
@@ -469,12 +465,12 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Company)
                     .WithMany(p => p.Reports)
                     .HasForeignKey(d => d.CompanyId)
-                    .HasConstraintName("FK__Report__CompanyI__619B8048");
+                    .HasConstraintName("FK__Report__CompanyI__6477ECF3");
 
                 entity.HasOne(d => d.ReportType)
                     .WithMany(p => p.Reports)
                     .HasForeignKey(d => d.ReportTypeId)
-                    .HasConstraintName("FK__Report__ReportTy__60A75C0F");
+                    .HasConstraintName("FK__Report__ReportTy__6383C8BA");
             });
 
             modelBuilder.Entity<ReportType>(entity =>
@@ -509,7 +505,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<SelectedDev>(entity =>
             {
                 entity.HasKey(e => new { e.RequestId, e.DeveloperId })
-                    .HasName("PK__Selected__3E48D5B510DF3FA5");
+                    .HasName("PK__Selected__3E48D5B524C24117");
 
                 entity.ToTable("SelectedDev");
 
@@ -517,18 +513,18 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.SelectedDevs)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SelectedD__Devel__25518C17");
+                    .HasConstraintName("FK__SelectedD__Devel__282DF8C2");
 
                 entity.HasOne(d => d.Interview)
                     .WithMany(p => p.SelectedDevs)
                     .HasForeignKey(d => d.InterviewId)
-                    .HasConstraintName("FK__SelectedD__Inter__2645B050");
+                    .HasConstraintName("FK__SelectedD__Inter__29221CFB");
 
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.SelectedDevs)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SelectedD__Reque__245D67DE");
+                    .HasConstraintName("FK__SelectedD__Reque__2739D489");
             });
 
             modelBuilder.Entity<Skill>(entity =>
@@ -546,7 +542,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<SkillRequire>(entity =>
             {
                 entity.HasKey(e => new { e.RequestId, e.SkillId })
-                    .HasName("PK__SkillReq__5E52586287765B44");
+                    .HasName("PK__SkillReq__5E525862512F636C");
 
                 entity.ToTable("SkillRequire");
 
@@ -554,13 +550,13 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.SkillRequires)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SkillRequ__Reque__208CD6FA");
+                    .HasConstraintName("FK__SkillRequ__Reque__236943A5");
 
                 entity.HasOne(d => d.Skill)
                     .WithMany(p => p.SkillRequires)
                     .HasForeignKey(d => d.SkillId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SkillRequ__Skill__2180FB33");
+                    .HasConstraintName("FK__SkillRequ__Skill__245D67DE");
             });
 
             modelBuilder.Entity<Transaction>(entity =>
@@ -589,12 +585,12 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Agreement)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.AgreementId)
-                    .HasConstraintName("FK__Transacti__Agree__787EE5A0");
+                    .HasConstraintName("FK__Transacti__Agree__7B5B524B");
 
                 entity.HasOne(d => d.Payer)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.PayerId)
-                    .HasConstraintName("FK__Transacti__Payer__778AC167");
+                    .HasConstraintName("FK__Transacti__Payer__7A672E12");
             });
 
             modelBuilder.Entity<Type>(entity =>
@@ -613,10 +609,10 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("User");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E386C49C795")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E385DABE57A")
                     .IsUnique();
 
-                entity.HasIndex(e => e.Email, "UQ__User__A9D1053483F408F6")
+                entity.HasIndex(e => e.Email, "UQ__User__A9D10534BE1254C7")
                     .IsUnique();
 
                 entity.Property(e => e.Email)
@@ -659,6 +655,26 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.UserDevices)
                     .HasForeignKey(d => d.UserId)
                     .HasConstraintName("FK__UserDevic__UserI__52593CB8");
+            });
+
+            modelBuilder.Entity<UserNotification>(entity =>
+            {
+                entity.HasKey(e => new { e.NotificationId, e.UserId })
+                    .HasName("PK__UserNoti__F1B7A2D6950E14E2");
+
+                entity.ToTable("UserNotification");
+
+                entity.HasOne(d => d.Notification)
+                    .WithMany(p => p.UserNotifications)
+                    .HasForeignKey(d => d.NotificationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__UserNotif__Notif__59063A47");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.UserNotifications)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__UserNotif__UserI__59FA5E80");
             });
 
             OnModelCreatingPartial(modelBuilder);

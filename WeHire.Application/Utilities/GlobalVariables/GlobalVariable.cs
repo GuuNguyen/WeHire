@@ -8,6 +8,13 @@ namespace WeHire.Application.Utilities.GlobalVariables
 {
     public static class GlobalVariable
     {
+        public static class NotificationTypeString
+        {
+            public const string DEVELOPER_RECRUITMENT = "Developer Recruitment";
+            public const string PENDING_INTERVIEW_APPROVAL = "Pending Interview Approval";
+            public const string PENDING_AGREEMENT_APPROVAL = "Pending Agreement Approval";
+        }
+
         public static class Reason
         {
             public const string REJECTED_REASON = "Your hiring request have been rejected";

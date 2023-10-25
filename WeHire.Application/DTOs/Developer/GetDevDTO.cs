@@ -10,6 +10,7 @@ namespace WeHire.Application.DTOs.Developer
     {
         public int DeveloperId { get; set; }
         public int? UserId { get; set; }
+        public string Fullname { get; set; }
         public string CodeName { get; set; }
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }

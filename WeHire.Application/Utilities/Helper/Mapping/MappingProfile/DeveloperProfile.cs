@@ -37,6 +37,7 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.Types, opt => opt.MapFrom(src => src.DeveloperTypes.Select(t => t.Type)));
 
             CreateMap<Developer, GetDevDTO>()
+                .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
                 .ForMember(dest => dest.DevStatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(DeveloperStatus), src.Status)));
 
             CreateMap<Developer, GetAllFieldDev>()

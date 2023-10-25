@@ -80,6 +80,18 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             return mappedDev;
         }
 
+        public List<GetDevDTO> GetUnofficialDev(PagingQuery query)
+        {
+            var unofficialDevs = _unitOfWork.UserRepository.Get(u => u.RoleId == (int)RoleEnum.Unofficial && u.Status == (int)UserStatus.Active)
+                                                           .Include(u => u.Developers.SingleOrDefault()!.User)
+                                                           .SelectMany(u => u.Developers)
+                                                           .Where(d => d.Status == (int)DeveloperStatus.Available);
+
+            unofficialDevs = unofficialDevs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
+            var mappedList = _mapper.Map<List<GetDevDTO>>(unofficialDevs);
+            return mappedList;
+        }
+
         public async Task<GetDevDetail> GetDevByIdAsync(int devId)
         {
             var dev = await _unitOfWork.DeveloperRepository
