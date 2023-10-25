@@ -14,10 +14,10 @@ namespace WeHire.Domain.Entities
             Developers = new HashSet<Developer>();
             InterviewAssignStaffs = new HashSet<Interview>();
             InterviewInterviewers = new HashSet<Interview>();
-            NotificationReceivers = new HashSet<Notification>();
-            NotificationSenders = new HashSet<Notification>();
+            Notifications = new HashSet<Notification>();
             Transactions = new HashSet<Transaction>();
             UserDevices = new HashSet<UserDevice>();
+            UserNotifications = new HashSet<UserNotification>();
         }
 
         public int UserId { get; set; }
@@ -37,9 +37,9 @@ namespace WeHire.Domain.Entities
         public virtual ICollection<Developer> Developers { get; set; }
         public virtual ICollection<Interview> InterviewAssignStaffs { get; set; }
         public virtual ICollection<Interview> InterviewInterviewers { get; set; }
-        public virtual ICollection<Notification> NotificationReceivers { get; set; }
-        public virtual ICollection<Notification> NotificationSenders { get; set; }
+        public virtual ICollection<Notification> Notifications { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
         public virtual ICollection<UserDevice> UserDevices { get; set; }
+        public virtual ICollection<UserNotification> UserNotifications { get; set; }
     }
 }

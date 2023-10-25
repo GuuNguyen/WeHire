@@ -14,6 +14,7 @@ namespace WeHire.Infrastructure.Services.UserServices
         public Task<GetUserDetail> GetUserByIdAsync(int id);
         public Task<object> GetUserLoginAsync(int userId);
         public List<GetUserDetail> GetAllUser(PagingQuery query, SearchUserDTO searchKey);       
+        public List<GetUserDetail> GetStaff(PagingQuery query);       
         public Task<GetUserDetail> CreateUserAsync(CreateUserDTO requestBody);
         public Task<GetUserDetail> CreateEmployeeAsync(CreateEmployeeDTO requestBody);
         public Task<GetUserDetail> UpdateUserAsync(int id, UpdateUserDTO requestBody);

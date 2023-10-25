@@ -44,6 +44,27 @@ namespace WeHire.API.Controllers
             });
         }
 
+
+        [HttpGet("Unofficial")]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetDevDTO>>), StatusCodes.Status200OK)]
+        public IActionResult GetAllUnofficial([FromQuery] PagingQuery query)
+        {
+            var result = _devService.GetUnofficialDev(query);
+            var total = result.Count;
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total,
+            };
+            return Ok(new PagedApiResponse<GetDevDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
         [HttpGet("DevWaitingInterview/{requestId}")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldDev>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevsWaitingInterview([FromQuery] PagingQuery query, int requestId)

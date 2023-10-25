@@ -11,7 +11,7 @@ namespace WeHire.Domain.Enums
     {
         public enum InterviewStatus
         {
-            [Description("Waiting Manager Approval")]
+            [Description("Waiting Approval")]
             WaitingManagerApproval = 1,
 
             [Description("Interviewing")]

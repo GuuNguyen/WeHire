@@ -41,6 +41,26 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpGet("Staff")]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetUserDetail>>), StatusCodes.Status200OK)]
+        public IActionResult GetAllStaff([FromQuery] PagingQuery query)
+        {
+            var result = _userService.GetStaff(query);
+            var total = result.Count;
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total,
+            };
+            return Ok(new PagedApiResponse<GetUserDetail>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserByIdAsync(int id)

@@ -18,6 +18,5 @@ namespace WeHire.Infrastructure.Services.InterviewServices
         public Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody);
         public Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody);
         public Task<int> GetTotalInterviewsAsync(int? companyId = null);
-
     }
 }

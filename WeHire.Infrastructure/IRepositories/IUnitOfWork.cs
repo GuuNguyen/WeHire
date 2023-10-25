@@ -32,6 +32,9 @@ namespace WeHire.Entity.IRepositories
         IGenericRepository<Transaction> TransactionRepository { get; }
         IGenericRepository<Education> EducationRepository { get; }
         IGenericRepository<ProfessionalExperience> ProfessionalExperienceRepository { get; }
+        IGenericRepository<Notification> NotificationRepository { get; }
+        IGenericRepository<NotificationType> NotificationTypeRepository { get; }
+        IGenericRepository<UserNotification> UserNotificationRepository { get; }
 
         IDbTransaction BeginTransaction(); 
         Task SaveChangesAsync();

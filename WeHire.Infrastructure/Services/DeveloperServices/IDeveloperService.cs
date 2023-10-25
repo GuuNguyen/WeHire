@@ -16,6 +16,7 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
     {
         public List<GetAllFieldDev> GetAllDev(PagingQuery query, SearchDeveloperDTO searchKey);
         public Task<GetDevDetail> GetDevByIdAsync(int devId);
+        public List<GetDevDTO> GetUnofficialDev(PagingQuery query);
         public List<GetAllFieldDev> GetDevsWaitingInterview(PagingQuery query, int requestId);
         public Task<List<GetAllFieldDev>> GetAllDevByTaskIdAsync(int taskId);
         public Task<List<GetMatchingDev>> GetDevMatchingWithRequest(int requestId);

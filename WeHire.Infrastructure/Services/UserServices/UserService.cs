@@ -85,6 +85,16 @@ namespace WeHire.Infrastructure.Services.UserServices
             return userDetail;
         }
 
+        public List<GetUserDetail> GetStaff(PagingQuery query)
+        {
+            var staffs = _unitOfWork.UserRepository.Get(u => u.RoleId == (int)RoleEnum.Staff && u.Status == (int)UserStatus.Active);
+
+            staffs = staffs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
+
+            var mappedStaffs = _mapper.Map<List<GetUserDetail>>(staffs);
+            return mappedStaffs;
+        }
+
         public async Task<object> GetUserLoginAsync(int userId)
         {
             var user = await _unitOfWork.UserRepository.Get(u => u.UserId == userId).SingleOrDefaultAsync()
@@ -253,5 +263,7 @@ namespace WeHire.Infrastructure.Services.UserServices
             var total = await _unitOfWork.UserRepository.GetAll().CountAsync();
             return total;
         }
+
+
     }
 }

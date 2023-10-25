@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace WeHire.Application.DTOs.AssignTask
 {
-    public class ChangeStatusTaskDTO
+    public class ApprovalStatusTask
     {
         public int TaskId { get; set; }
-        public int Status { get; set; }
+        public bool IsApproval { get; set; }
     }
 }

@@ -14,6 +14,7 @@ namespace WeHire.Domain.Enums
             Available = 1,
             SelectedOnRequest = 2,
             OnWorking = 3,
+            OnTasking = 4,
         }
     }
 }

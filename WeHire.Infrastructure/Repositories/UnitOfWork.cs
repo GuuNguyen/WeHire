@@ -33,6 +33,9 @@ namespace WeHire.Entity.Repositories
         private IGenericRepository<Transaction> _TransactionRepository;
         private IGenericRepository<Education> _EducationRepository;
         private IGenericRepository<ProfessionalExperience> _ProfessionalExperienceRepository;
+        private IGenericRepository<Notification> _NotificationRepository;
+        private IGenericRepository<NotificationType> _NotificationTypeRepository;
+        private IGenericRepository<UserNotification> _UserNotificationRepository;
 
         public UnitOfWork(WeHireDBContext context)
         {
@@ -59,6 +62,9 @@ namespace WeHire.Entity.Repositories
         public IGenericRepository<Transaction> TransactionRepository => _TransactionRepository ??= new GenericRepository<Transaction>(_context);
         public IGenericRepository<Education> EducationRepository => _EducationRepository ??= new GenericRepository<Education>(_context);
         public IGenericRepository<ProfessionalExperience> ProfessionalExperienceRepository => _ProfessionalExperienceRepository ??= new GenericRepository<ProfessionalExperience>(_context);
+        public IGenericRepository<Notification> NotificationRepository => _NotificationRepository ??= new GenericRepository<Notification>(_context);
+        public IGenericRepository<NotificationType> NotificationTypeRepository => _NotificationTypeRepository ??= new GenericRepository<NotificationType>(_context);
+        public IGenericRepository<UserNotification> UserNotificationRepository => _UserNotificationRepository ??= new GenericRepository<UserNotification>(_context);
 
         public void Dispose()
         {

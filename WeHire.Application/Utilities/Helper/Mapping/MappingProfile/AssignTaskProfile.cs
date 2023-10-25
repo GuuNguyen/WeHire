@@ -21,7 +21,6 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                  .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((AssignTaskStatus)src.Status)))
                  .ReverseMap();
             CreateMap<AssignTask, GetAssignTaskDetail>()
-                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
                  .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((AssignTaskStatus)src.Status)))
                  .ReverseMap();
             CreateMap<AssignTask, CreateAssignTaskDTO>().ReverseMap();
