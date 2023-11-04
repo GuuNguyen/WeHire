@@ -58,7 +58,8 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                                                         .Include(lr => lr.LevelRequire)
                                                         .Include(tr => tr.TypeRequire)
                                                         .Include(sr => sr.SkillRequires)
-                                                            .ThenInclude(s => s.Skill);
+                                                            .ThenInclude(s => s.Skill)
+                                                        .OrderByDescending(n => n.CreatedAt);
 
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
@@ -102,14 +103,16 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
                    ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
-            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId)
+            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+                                                                                        r.Status != (int)HiringRequestStatus.Expired)
                                                                               .Include(c => c.Company)
                                                                               .Include(r => r.EmploymentType)
                                                                               .Include(r => r.ScheduleType)
                                                                               .Include(lr => lr.LevelRequire)
                                                                               .Include(tr => tr.TypeRequire)
                                                                               .Include(sr => sr.SkillRequires)
-                                                                                 .ThenInclude(s => s.Skill);
+                                                                                 .ThenInclude(s => s.Skill)
+                                                                              .OrderByDescending(n => n.CreatedAt);
 
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
@@ -120,6 +123,30 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             return mappedRequests;
         }
 
+        public async Task<List<GetAllFieldRequest>> GetExpiredRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey)
+        {
+            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
+                  ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
+
+            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+                                                                                        r.Status == (int)HiringRequestStatus.Expired)
+                                                                              .Include(c => c.Company)
+                                                                              .Include(r => r.EmploymentType)
+                                                                              .Include(r => r.ScheduleType)
+                                                                              .Include(lr => lr.LevelRequire)
+                                                                              .Include(tr => tr.TypeRequire)
+                                                                              .Include(sr => sr.SkillRequires)
+                                                                                 .ThenInclude(s => s.Skill)
+                                                                              .OrderBy(n => n.Duration);
+
+            requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
+            requests = SearchBySalary(requests, searchExtensionKey);
+            requests = requests.SearchItems(searchKey);
+            requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
+
+            var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
+            return mappedRequests;
+        }
 
         public async Task<GetAllFieldRequest> GetRequestByIdAsync(int requestId)
         {
@@ -135,7 +162,6 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
             
             var mappedRequest = _mapper.Map<GetAllFieldRequest>(request);
-            mappedRequest.PostedTime = _postedTimeCalculatorService.GetElapsedTimeSinceCreation(request.CreatedAt); 
             return mappedRequest;
         }
 
@@ -166,24 +192,24 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
+                newRequest.RequestCode = await GenerateUniqueCodeName();
                 newRequest.TargetedDev = 0;
                 newRequest.CreatedAt = DateTime.Now;
                 newRequest.BookMark = false;
                 newRequest.Status = requestBody.isSaved ? newRequest.Status = (int)HiringRequestStatus.Saved
                                                         : newRequest.Status = (int)HiringRequestStatus.WaitingApproval;
-                if (requestBody.isSaved) newRequest.Status = (int)HiringRequestStatus.Saved;
-                else
-                {
-                    newRequest.Status = (int)HiringRequestStatus.WaitingApproval;
-                    await _notificationService.SendManagerNotificationAsync(hr!.UserId, NotificationTypeString.DEVELOPER_RECRUITMENT);
-                }
-
+             
                 await HandleLevels(requestBody.LevelRequireId);
                 await HandleTypes(requestBody.TypeRequireId);
                 await HandleSkills(newRequest, requestBody.SkillIds);
 
                 await _unitOfWork.RequestRepository.InsertAsync(newRequest);
                 await _unitOfWork.SaveChangesAsync();
+                if (!requestBody.isSaved)
+                {
+                    await _notificationService.SendManagerNotificationAsync(hr!.UserId, newRequest.RequestId, NotificationTypeString.HIRING_REQUEST,
+                       $"They are posted a new request to hire developers for their company. The request is awaiting your approval.");
+                }
                 transaction.Commit();
             }
             catch (Exception)
@@ -249,8 +275,8 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                                                                  .ThenInclude(sr => sr.Skill)
                                                             .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
-            await HandleLevels((int)request.TypeRequireId);
-            await HandleTypes((int)request.LevelRequireId);
+            await HandleLevels((int)request.TypeRequireId!);
+            await HandleTypes((int)request.LevelRequireId!);
             dynamic clonedRequest;
             using var transaction = _unitOfWork.BeginTransaction();
             try
@@ -258,17 +284,20 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 clonedRequest = new HiringRequest
                 {
                     JobTitle = request.JobTitle,
+                    RequestCode = await GenerateUniqueCodeName(),
                     JobDescription = request.JobDescription,
                     NumberOfDev = request.NumberOfDev,
-                    TargetedDev = request.TargetedDev,
+                    TargetedDev = 0,
                     SalaryPerDev = request.SalaryPerDev,
                     Duration = request.Duration,
                     CreatedAt = DateTime.Now,
-                    RejectionReason = null,
-                    Status = (int)HiringRequestStatus.Saved,
                     CompanyId = request.CompanyId,
+                    ScheduleTypeId = request.ScheduleTypeId,
+                    EmploymentTypeId = request.EmploymentTypeId,
                     TypeRequireId = request.TypeRequireId,
                     LevelRequireId = request.LevelRequireId,
+                    BookMark = false,
+                    Status = (int)HiringRequestStatus.Saved,
                 };
                 var skillIds = request.SkillRequires.Select(sr => sr.SkillId).ToList();
                 await HandleSkills(clonedRequest, skillIds);
@@ -374,16 +403,56 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         {
             var requests = await _unitOfWork.RequestRepository.Get(r => r.Status == (int)HiringRequestStatus.InProgress
                                                                        && currentTime > r.Duration)
+                                                              .Include(r => r.Company)
                                                               .ToListAsync();
             if (requests.Any())
             {
                 foreach (var request in requests)
                 {
+                    var hrId = request.Company.UserId;
                     request.Status = (int)HiringRequestStatus.Expired;
+                    await _notificationService.SendNotificationAsync(hrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                                         $"Your hiring request #{request.RequestId} has expired!");
                     _unitOfWork.RequestRepository.Update(request);
                     await _unitOfWork.SaveChangesAsync();
                 }
             }
+        }
+
+        public Task<int> GetTotalExpiredRequestsAsync(int companyId)
+        {
+             var total = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+                                                                r.Status == (int)HiringRequestStatus.Expired)
+                                                        .CountAsync();
+            return total;
+        }
+
+        public async Task<string> DeleteHiringRequest(int requestId)
+        {
+            var hiringRequest = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestId &&
+                                                                             r.Status == (int)HiringRequestStatus.Saved)
+                                                                   .SingleOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
+            if (hiringRequest.SkillRequires.Any())
+            {
+                hiringRequest.SkillRequires.Clear();
+            }
+            await _unitOfWork.RequestRepository.DeleteAsync(requestId);
+            await _unitOfWork.SaveChangesAsync();
+            return "Delete success!";
+        }
+        private async Task<string> GenerateUniqueCodeName()
+        {
+            Random random = new Random();
+            string codeName;
+            var isExistRequestCode = false;
+            do
+            {
+                int randomNumber = random.Next(10000, 100000);
+                codeName = "REQUEST_" + randomNumber.ToString();
+                isExistRequestCode = await _unitOfWork.RequestRepository.AnyAsync(d => d.RequestCode == codeName);
+            } while (isExistRequestCode);
+            return codeName;
         }
     }
 }

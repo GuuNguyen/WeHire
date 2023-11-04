@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using WeHire.Application.DTOs.ProfessionalExperience;
 using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Domain.Entities;
+using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 
@@ -27,15 +28,20 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
 
         public async Task<List<GetProfessionalExperience>> GetProfessionalExperiencesByDevIdAsync(int developerId)
         {
-            var dev = _unitOfWork.DeveloperRepository.GetByIdAsync(developerId)
+            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(developerId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
+
             var pros = await _unitOfWork.ProfessionalExperienceRepository.Get(p => p.DeveloperId == developerId).ToListAsync();
+
             var mappedPro = _mapper.Map<List<GetProfessionalExperience>>(pros);
             return mappedPro;
         }
 
         public async Task<GetProfessionalExperience> CreateProfessionalExperienceAsync(CreateProfessionalExperience requestBody)
         {
+            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(requestBody.DeveloperId)
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
+
             var newPro = _mapper.Map<ProfessionalExperience>(requestBody);
             await _unitOfWork.ProfessionalExperienceRepository.InsertAsync(newPro);
             await _unitOfWork.SaveChangesAsync();

@@ -69,15 +69,23 @@ namespace WeHire.API.Controllers
         }
 
         [HttpGet("{interviewId}")]
-        [ProducesResponseType(typeof(ApiResponse<GetInterviewWithDev>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInterviewById(int interviewId)
+        [ProducesResponseType(typeof(PagedApiResponseSpecificData<GetInterviewWithDev>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetInterviewById(int interviewId,[FromQuery] PagingQuery query)
         {
-            var result = await _interviewService.GetInterviewById(interviewId);
+            var result = await _interviewService.GetInterviewById(interviewId, query);
+            var total = await _interviewService.GetTotalDevInterviewAsync(interviewId);
 
-            return Ok(new ApiResponse<GetInterviewWithDev>()
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponseSpecificData<GetInterviewWithDev>()
             {
                 Code = StatusCodes.Status200OK,
-                Data = result
+                Paging = paging,
+                Data = result 
             });
         }
 

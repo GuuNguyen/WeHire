@@ -35,6 +35,8 @@ namespace WeHire.Application.Utilities.Helper.Mapping
                 mc.AddProfile(new EducationProfile());
                 mc.AddProfile(new ProfessionalExperienceProfile());
                 mc.AddProfile(new NotificationProfile());
+                mc.AddProfile(new DeveloperTaskProfile());
+                mc.AddProfile(new UserDeviceProfile());
             });
 
             IMapper mapper = mappingConfig.CreateMapper();

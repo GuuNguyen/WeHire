@@ -23,6 +23,7 @@ using static WeHire.Domain.Enums.AssignTaskEnum;
 using static WeHire.Domain.Enums.DeveloperEnum;
 using static WeHire.Domain.Enums.DeveloperTaskEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
+using static WeHire.Domain.Enums.UserEnum;
 
 namespace WeHire.Infrastructure.Services.AssignTaskServices
 {
@@ -37,35 +38,76 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
             _mapper = mapper;
         }
 
-
         public List<GetAssignTaskDTO> GetAllAssignTask(PagingQuery query, SearchAssignTaskDTO searchKey)
         {
-            var assignTasks = _unitOfWork.AssignTaskRepository.GetAll();
+            var assignTasks = _unitOfWork.AssignTaskRepository.GetAll()
+                                                              .Include(a => a.DeveloperTaskAssignments)
+                                                              .OrderByDescending(u => u.CreateAt)
+                                                              .AsQueryable();
 
             assignTasks = assignTasks.SearchItems(searchKey);
 
             assignTasks = assignTasks.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedAssignTasks = _mapper.Map<List<GetAssignTaskDTO>>(assignTasks);
+
+            return mappedAssignTasks;
+        }
+
+        public List<GetAssignTaskDTO> GetAllAssignTaskByStaff(int staffId, PagingQuery query, SearchAssignTaskDTO searchKey)
+        {
+            var assignTasks = _unitOfWork.AssignTaskRepository.Get(t => t.User.UserId == staffId &&
+                                                                        t.User.RoleId == (int)RoleEnum.Staff &&
+                                                                        t.User.Status != (int)UserStatus.InActive)
+                                                              .Include(t => t.DeveloperTaskAssignments)
+                                                              .Include(t => t.User)
+                                                                    .ThenInclude(u => u.Role)
+                                                              .OrderByDescending(u => u.CreateAt)
+                                                              .AsQueryable();
+
+            assignTasks = assignTasks.SearchItems(searchKey);
+
+            assignTasks = assignTasks.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
+
+            var mappedAssignTasks = _mapper.Map<List<GetAssignTaskDTO>>(assignTasks);
+
             return mappedAssignTasks;
         }
 
         public async Task<GetAssignTaskDetail> GetAssignTaskByIdAsync(int taskId)
         {
-            var task = await _unitOfWork.AssignTaskRepository.Get(t => t.TaskId ==taskId)
-                                                             .Include(t => t.User)
-                                                             .FirstOrDefaultAsync()
-                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.TASK_FIELD, ErrorMessage.TASK_NOT_EXIST);
-            var devs = await _unitOfWork.DeveloperTaskAssignmentRepository.Get(dt => dt.TaskId ==  taskId)
-                                                                          .Include(dt => dt.Developer)
-                                                                              .ThenInclude(d => d.User)
-                                                                          .Select(dt => dt.Developer)
-                                                                          .ToListAsync();
+            var taskQuery = _unitOfWork.AssignTaskRepository
+                .Get(t => t.TaskId == taskId)
+                .Include(t => t.User);
+
+            var task = await taskQuery.FirstOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.TASK_FIELD, ErrorMessage.TASK_NOT_EXIST);
+
+            var devsQuery = _unitOfWork.DeveloperTaskAssignmentRepository
+                .Get(dt => dt.TaskId == taskId)
+                .Include(dt => dt.Developer)
+                .ThenInclude(d => d.User);
+
+            var devs = await devsQuery.Select(dt => dt.Developer).ToListAsync();
+
             var staff = await _unitOfWork.UserRepository.GetByIdAsync(task.UserId!);
 
             var mappedTask = _mapper.Map<GetAssignTaskDetail>(task);
-            mappedTask.Staff = _mapper.Map<GetUserDetail>(staff);
-            mappedTask.Devs = _mapper.Map<List<GetDevDTO>>(devs);
+            mappedTask.Staff = _mapper.Map<GetUserDTO>(staff);
+            mappedTask.Devs = _mapper.Map<List<GetDevTask>>(devs);
+
+            var devStatuses = await _unitOfWork.DeveloperTaskAssignmentRepository
+                .Get(d => devs.Select(dev => dev.DeveloperId).Contains(d.DeveloperId) && d.TaskId == taskId)
+                .ToDictionaryAsync(d => d.DeveloperId, d => Enum.GetName(typeof(DeveloperTaskStatus), d.Status));
+
+            mappedTask.Devs.ForEach(dt =>
+            {
+                if (devStatuses.TryGetValue(dt.DeveloperId, out var devStatus))
+                {
+                    dt.DevTaskStatus = devStatus;
+                }
+            });
+
             return mappedTask;
         }
 
@@ -73,24 +115,26 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
         {
             var staff = await _unitOfWork.UserRepository.GetFirstOrDefaultAsync(u => u.UserId == requestBody.UserId
                                                                                   && u.RoleId == (int)RoleEnum.Staff
-                                                                                  && u.Status == (int)UserEnum.UserStatus.Active)
+                                                                                  && u.Status == (int)UserStatus.Active)
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.STAFF_FIELD, ErrorMessage.STAFF_NOT_EXIST);
             var newAssignTask = _mapper.Map<AssignTask>(requestBody);
-            
+
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
                 newAssignTask.Status = (int)AssignTaskStatus.Preparing;
-                staff.Status = (int)UserEnum.UserStatus.OnTasking;
+                newAssignTask.NumOfDeveloper = requestBody.DevIds.Count;
+                newAssignTask.CreateAt = DateTime.Now;
+                staff.Status = (int)UserStatus.OnTasking;
+                _unitOfWork.UserRepository.Update(staff);
+                await _unitOfWork.AssignTaskRepository.InsertAsync(newAssignTask);
 
                 await HandleDeveloperAssignTaskAsync(newAssignTask, requestBody.DevIds);
                 await HandleDeveloperOnTaskStatusAsync(requestBody.DevIds);
 
-                _unitOfWork.UserRepository.Update(staff);
-                await _unitOfWork.AssignTaskRepository.InsertAsync(newAssignTask);
                 await _unitOfWork.SaveChangesAsync();
 
-                transaction.Commit();             
+                transaction.Commit();
             }
             catch (Exception)
             {
@@ -105,21 +149,21 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
         {
             if (devIds == null || !devIds.Any()) return;
 
-            var validDevIds =  _unitOfWork.DeveloperRepository.Get(d => devIds.Contains(d.DeveloperId)
+            var validDevIds = _unitOfWork.DeveloperRepository.Get(d => devIds.Contains(d.DeveloperId)
                                                 && d.Status == (int)DeveloperStatus.Available
                                                 && d.User.RoleId == (int)RoleEnum.Unofficial);
 
             if (validDevIds.Count() != devIds.Count())
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_COUNT);
 
-            var devs =  _unitOfWork.DeveloperRepository.Get(d => devIds.Contains(d.DeveloperId));
+            var devs = _unitOfWork.DeveloperRepository.Get(d => devIds.Contains(d.DeveloperId));
 
             var assignments = await devs.Select(dev => new DeveloperTaskAssignment
-                                        {
-                                            Task = assignTask,
-                                            Developer = dev,
-                                            Status = (int)DeveloperTaskStatus.Preparing
-                                        }).ToListAsync();
+            {
+                Task = assignTask,
+                Developer = dev,
+                Status = (int)DeveloperTaskStatus.Preparing
+            }).ToListAsync();
             await _unitOfWork.DeveloperTaskAssignmentRepository.InsertRangeAsync(assignments);
         }
 
@@ -155,6 +199,7 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
                 else
                 {
                     task.Status = (int)AssignTaskStatus.Cancelled;
+                    task.RejectionReason = requestBody.RejectionReason;
                     devs.ForEach(d =>
                     {
                         d.Status = (int)DeveloperStatus.Available;
@@ -184,8 +229,8 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
                                                                               .ToListAsync();
             devTasks.ForEach(d =>
             {
-                if(d.Status != (int)DeveloperTaskStatus.Success)
-                   throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, $"Developer have code = {d.Developer.CodeName} is not finished yet!");
+                if (d.Status != (int)DeveloperTaskStatus.Success)
+                    throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, $"Developer have code = {d.Developer.CodeName} is not finished yet!");
             });
             var devs = devTasks.Select(dt => dt.Developer).ToList();
             using var transaction = _unitOfWork.BeginTransaction();
@@ -217,11 +262,19 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
                                                                                    .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_TASK_FIELD, ErrorMessage.DEV_TASK_NOT_EXIST);
 
-            devTaskAssign.Status = Enum.IsDefined(typeof(DeveloperTaskStatus), requestBody.Status) && requestBody.Status != (int)DeveloperTaskStatus.Preparing 
-                                                                                       ? requestBody.Status
-                                                                                       : throw new ExceptionResponse(HttpStatusCode.BadRequest,
-                                                                                       ErrorField.STATUS_FIELD, ErrorMessage.STATUS_NOT_EXIST);
+            if (requestBody.IsApproved)
+            {
+                devTaskAssign.Status = (int)DeveloperTaskStatus.Success;
+                var dev = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == requestBody.DeveloperId)
+                                                               .Include(d => d.User)
+                                                               .SingleOrDefaultAsync();
+                dev.User.RoleId = (int)RoleEnum.Developer;
+                _unitOfWork.UserRepository.Update(dev.User);
+            } 
+            else
+                devTaskAssign.Status = (int)DeveloperTaskStatus.Fail;
 
+            await _unitOfWork.SaveChangesAsync();
             var mappedDevTaskAssign = _mapper.Map<GetDevTaskAssignmentDTO>(devTaskAssign);
             return mappedDevTaskAssign;
         }
@@ -232,6 +285,15 @@ namespace WeHire.Infrastructure.Services.AssignTaskServices
             return enumValues;
         }
 
-        
+        public async Task<int> GetTotalTaskByStaffAsync(int staffId)
+        {
+            var total = await _unitOfWork.AssignTaskRepository.Get(t => t.User.UserId == staffId &&
+                                                                       t.User.RoleId == (int)RoleEnum.Staff &&
+                                                                       t.User.Status != (int)UserStatus.InActive)
+                                                             .Include(t => t.User)
+                                                                   .ThenInclude(u => u.Role)
+                                                             .CountAsync();
+            return total;
+        }
     }
 }

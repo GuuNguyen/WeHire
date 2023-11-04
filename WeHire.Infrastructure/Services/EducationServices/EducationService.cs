@@ -27,7 +27,7 @@ namespace WeHire.Infrastructure.Services.EducationServices
 
         public async Task<List<GetEducationDTO>> GetEducationsByDevIdAsync(int developerId)
         {
-            var dev = _unitOfWork.DeveloperRepository.GetByIdAsync(developerId)
+            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(developerId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
             var educations = await _unitOfWork.EducationRepository.Get(e => e.DeveloperId == developerId).ToListAsync();
             var mappedEdus = _mapper.Map<List<GetEducationDTO>>(educations);
@@ -39,7 +39,6 @@ namespace WeHire.Infrastructure.Services.EducationServices
             var newEdu = _mapper.Map<Education>(requestBody);
             await _unitOfWork.EducationRepository.InsertAsync(newEdu);
             await _unitOfWork.SaveChangesAsync();
-
             var mappedEdu = _mapper.Map<GetEducationDTO>(newEdu);
             return mappedEdu;
         }

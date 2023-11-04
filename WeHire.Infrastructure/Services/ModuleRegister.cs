@@ -10,11 +10,13 @@ using WeHire.Application.Utilities.Helper;
 using WeHire.Domain.Entities;
 using WeHire.Entity.IRepositories;
 using WeHire.Entity.Repositories;
+using WeHire.Infrastructure.Services.AccountServices;
 using WeHire.Infrastructure.Services.AgreementServices;
 using WeHire.Infrastructure.Services.AssignTaskServices;
 using WeHire.Infrastructure.Services.ComapnyPartnerServices;
 using WeHire.Infrastructure.Services.CvServices;
 using WeHire.Infrastructure.Services.DeveloperServices;
+using WeHire.Infrastructure.Services.EducationServices;
 using WeHire.Infrastructure.Services.EmploymentTypeServices;
 using WeHire.Infrastructure.Services.FileServices;
 using WeHire.Infrastructure.Services.GenderServices;
@@ -26,13 +28,16 @@ using WeHire.Infrastructure.Services.NotificationServices;
 using WeHire.Infrastructure.Services.PaymentServices;
 using WeHire.Infrastructure.Services.PercentCalculatServices;
 using WeHire.Infrastructure.Services.PostedTimeCalculatorService;
+using WeHire.Infrastructure.Services.ProfessionalExperienceServices;
 using WeHire.Infrastructure.Services.RequestStatusServices;
 using WeHire.Infrastructure.Services.RoleServices;
 using WeHire.Infrastructure.Services.ScheduleTypeServices;
 using WeHire.Infrastructure.Services.SelectingDevServices;
 using WeHire.Infrastructure.Services.SkillServices;
+using WeHire.Infrastructure.Services.TeamMeetingServices;
 using WeHire.Infrastructure.Services.TransactionServices;
 using WeHire.Infrastructure.Services.TypeServices;
+using WeHire.Infrastructure.Services.UserDeviceServices;
 using WeHire.Infrastructure.Services.UserServices;
 
 namespace WeHire.Infrastructure.Services
@@ -67,6 +72,11 @@ namespace WeHire.Infrastructure.Services
             services.AddScoped<IPostedTimeCalculatorService, PostedTimeCalculatorService.PostedTimeCalculatorService>();
             services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IEducationService, EducationService>();
+            services.AddScoped<IProfessionalExperienceService, ProfessionalExperienceService>();
+            services.AddScoped<IUserDeviceService, UserDeviceService>();
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<ITeamMeetingService, TeamMeetingService>();
         }
     }
 }

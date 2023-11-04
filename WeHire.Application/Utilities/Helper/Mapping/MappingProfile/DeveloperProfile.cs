@@ -9,6 +9,7 @@ using WeHire.Application.Utilities.Helper.EnumDescription;
 using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using static WeHire.Domain.Enums.DeveloperEnum;
+using static WeHire.Domain.Enums.DeveloperTaskEnum;
 using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.UserEnum;
 
@@ -39,6 +40,9 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<Developer, GetDevDTO>()
                 .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"))
                 .ForMember(dest => dest.DevStatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(DeveloperStatus), src.Status)));
+
+            CreateMap<Developer, GetDevTask>()
+             .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"));
 
             CreateMap<Developer, GetAllFieldDev>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.User.FirstName))

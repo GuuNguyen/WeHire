@@ -42,25 +42,6 @@ namespace WeHire.Infrastructure.Services.AgreementServices
                 RequestId = requestId,
                 CommissionRate = commissionRate,
                 TotalCommission = CalculateTotalCommission(commissionRate, request.NumberOfDev, request.SalaryPerDev),
-                CompanyPartnerName = request.Company.CompanyName,
-                ConfidentialInformation = "The following services shall be provided by the party as agreed: " +
-                                          "1. The Company Partner agrees to engage the WeHire Company to provide employees frothier business needs." +
-                                          "2. The WeHire Company shall provide qualified employees to the Company Partner based on their specified requirements.",
-                ServicesProvided = "",
-                TermsAndConditions = "The terms of this contract are detailed as follows:" +
-                                     "1. Terms" +
-                                     "This Agreement shall commence on the Effective Date and shall remain in effect untilterminated by either party with 7 days written notice." +
-                                     "The Agreement may be extended upon the provision of written consent from both Parties." +
-                                     "Confidentiality" +
-                                     "Both Parties shall maintain the confidentiality of all information shared during the course of thisAgreement and shall not disclose it to any third party except where required by law." +
-                                     "Termination" +
-                                     "This Agreement may be terminated:Immediately, in the event that one of the Parties breaches this Agreement." +
-                                     "At any given time by providing written notice to the other party with the notice periodspecified in Term" +
-                                     "Upon termination of this Agreement, the WeHire Company shall provide a final invoice, and theCompany Partner shall make any outstanding commission payments…" +
-                                     "Representations and Warranties" +
-                                     "Both Parties represent and warrant that they have the authority to enter into this Agreement and that their performance under this Agreement will not violate any third-party rights or any other agreement." +
-                                     "Entire AgreementThis Agreement contains the entire agreement between the Parties and supersedes all prioragreements, understandings, or conditions." +
-                                     "IN WITNESS WHEREOF, the Parties have executed this Commission Agreement as of theEffective Dat",
                 CreateAt = DateTime.Now,
                 Status = (int)AgreementStatus.PendingApproval,
             };

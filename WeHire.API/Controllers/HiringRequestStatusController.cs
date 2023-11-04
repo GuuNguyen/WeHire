@@ -42,5 +42,17 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
+
+        [HttpPut("Cancel")]
+        [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CancelRequestAsync(CancelRequestModel requestBody)
+        {
+            var result = await _requestStatusService.CancelRequestAsync(requestBody);
+            return Ok(new ApiResponse<GetRequestDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
     }
 }

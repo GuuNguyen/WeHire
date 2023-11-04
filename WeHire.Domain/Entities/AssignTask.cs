@@ -16,6 +16,9 @@ namespace WeHire.Domain.Entities
         public string TaskTitle { get; set; }
         public string Description { get; set; }
         public DateTime? Deadline { get; set; }
+        public int? NumOfDeveloper { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public string RejectionReason { get; set; }
         public int Status { get; set; }
         public int? UserId { get; set; }
 

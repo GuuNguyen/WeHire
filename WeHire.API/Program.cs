@@ -1,3 +1,6 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.EntityFrameworkCore;
 using WeHire.API.Configurations;
 using WeHire.Application.Utilities.Middleware;
@@ -26,13 +29,14 @@ builder.Services.AddDbContext<WeHireDBContext>(options =>
 });
 builder.Services.RegisterJwtModule(builder.Configuration);
 builder.Services.RegisterSwaggerModule();
-
 builder.Services.InfrastructureRegister();
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile("Configurations/wehire-firebase-adminsdk.json")
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

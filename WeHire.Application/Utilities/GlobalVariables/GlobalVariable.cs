@@ -10,9 +10,11 @@ namespace WeHire.Application.Utilities.GlobalVariables
     {
         public static class NotificationTypeString
         {
-            public const string DEVELOPER_RECRUITMENT = "Developer Recruitment";
-            public const string PENDING_INTERVIEW_APPROVAL = "Pending Interview Approval";
-            public const string PENDING_AGREEMENT_APPROVAL = "Pending Agreement Approval";
+            public const string HIRING_REQUEST = "Hiring Request";
+            public const string INTERVIEW = "Interview";
+            public const string AGREEMENT = "Agreement";
+            public const string TASK = "Task";
+            public const string PAYMENT = "Payment";
         }
 
         public static class Reason
@@ -37,7 +39,9 @@ namespace WeHire.Application.Utilities.GlobalVariables
         public static class ErrorMessage
         {        
             public const string NULL_FIELD = "This field is null!";
+            public const string REFRESH_TOKEN_FIELD = "The refresh token is invalid or expired!";
             public const string USER_NOT_EXIST = "This user does not exist!";
+            public const string USER_DEVICE_NOT_EXIST = "This user device does not exist!";
             public const string HR_NOT_EXIST = "This HR does not exist!";
             public const string STAFF_NOT_EXIST = "This staff does not exist!";
             public const string CURRENT_PASSWORD_NOT_MATCH = "Current password is incorrect";
@@ -68,6 +72,8 @@ namespace WeHire.Application.Utilities.GlobalVariables
         public static class ErrorField
         {
             public const string ID_FIELD  = "Id";
+            public const string REFRESH_TOKEN  = "RefreshToken";
+            public const string USER_DEVICE  = "UserDevice";
             public const string USER_FIELD = "User";
             public const string STAFF_FIELD = "Staff";
             public const string HR_FIELD = "HR";

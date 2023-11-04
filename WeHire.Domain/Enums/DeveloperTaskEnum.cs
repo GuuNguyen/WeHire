@@ -12,7 +12,7 @@ namespace WeHire.Domain.Enums
         {
             Preparing = 1,
 
-            Interviewing = 2,
+            Progressing = 2,
 
             Success = 3,
 

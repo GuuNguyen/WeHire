@@ -1,9 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Application.DTOs.User;
@@ -37,42 +41,7 @@ namespace WeHire.Infrastructure.Services.UserServices
             _fileService = fileService;
         }
 
-        public async Task<object> LoginAsync(LoginDTO userLoginDTO)
-        {
-            var user = await _unitOfWork.UserRepository
-                .GetFirstOrDefaultAsync(u =>
-                        u.Email == userLoginDTO.Email &&
-                        u.Password == userLoginDTO.Password);
-
-            if (user == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Email or Password", "Email or password is incorrect. Please try again!");
-
-            if (user.Status == (int)UserEnum.UserStatus.InActive)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.STATUS_FIELD, "Your account is inactive!");
-
-            var role = await _unitOfWork.RoleRepository.GetFirstOrDefaultAsync(r => r.RoleId == user.RoleId);
-
-            var token = _jwtHelper.generateJwtToken(role, user.UserId);
-            dynamic responseObj = new
-            {
-                UserId = user.UserId,
-                Role = role.RoleName,
-                Token = token
-            };
-            if (user.RoleId == (int)RoleEnum.Developer)
-            {
-                var devId = await _unitOfWork.DeveloperRepository.Get(d => d.UserId == user.UserId).Select(d => d.DeveloperId).SingleOrDefaultAsync();
-                responseObj = new
-                {
-                    UserId = user.UserId,
-                    DevId = devId,
-                    Role = role.RoleName,
-                    Token = token
-                };
-            }
-            return responseObj;
-        }
-
+     
         public async Task<GetUserDetail> GetUserByIdAsync(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
@@ -141,26 +110,6 @@ namespace WeHire.Infrastructure.Services.UserServices
             return userDetailsList;
         }
 
-        public async Task<GetUserDetail> CreateUserAsync(CreateUserDTO requestBody)
-        {
-            var user = _mapper.Map<User>(requestBody);
-            var isExitedEmail = await _unitOfWork.UserRepository.AnyAsync(u => u.Email == user.Email);
-
-            if (user == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.INCORRECT_INFO);
-
-            if (isExitedEmail)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
-
-            user.Status = (int)UserStatus.Active;
-            user.RoleId = (int)RoleEnum.HR;
-
-            await _unitOfWork.UserRepository.InsertAsync(user);
-            await _unitOfWork.SaveChangesAsync();
-
-            var newUser = _mapper.Map<GetUserDetail>(user);
-            return newUser;
-        }
 
         public async Task<GetUserDetail> CreateEmployeeAsync(CreateEmployeeDTO requestBody)
         {
@@ -263,7 +212,5 @@ namespace WeHire.Infrastructure.Services.UserServices
             var total = await _unitOfWork.UserRepository.GetAll().CountAsync();
             return total;
         }
-
-
     }
 }

@@ -23,11 +23,33 @@ namespace WeHire.API.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAssignTaskDTO>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllCvAsync([FromQuery] PagingQuery query,
+        public async Task<IActionResult> GetAllTaskAsync([FromQuery] PagingQuery query,
                                                        [FromQuery] SearchAssignTaskDTO searchKey)
         {
             var result = _assignTaskService.GetAllAssignTask(query, searchKey);
             var total = await _assignTaskService.GetTotalItemAsync();
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponse<GetAssignTaskDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
+
+        [HttpGet("Staff/{staffId}")]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetAssignTaskDTO>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllTaskByStaffAsync(int staffId, [FromQuery] PagingQuery query,
+                                                                [FromQuery] SearchAssignTaskDTO searchKey)
+        {
+            var result = _assignTaskService.GetAllAssignTaskByStaff(staffId, query, searchKey);
+            var total = await _assignTaskService.GetTotalTaskByStaffAsync(staffId);
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,

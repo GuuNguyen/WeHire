@@ -12,5 +12,11 @@ namespace WeHire.Application.Utilities.Helper.ConvertDate
         {
             return date.HasValue ? date.Value.ToString("dd-MM-yyyy") : "";
         }
+        public static DateTime ConvertTimeToSEA(DateTime date)
+        {
+            var seaDateTime = TimeZoneInfo.ConvertTime(date,
+                          TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+            return seaDateTime;
+        }
     }
 }

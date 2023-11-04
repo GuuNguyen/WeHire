@@ -21,6 +21,7 @@ namespace WeHire.Application.DTOs.HiringRequest
         public DateTime Duration { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string StatusString { get; set; }
+        public string PostedTime { get; set; }
         public int CompanyId { get; set; }
         public string CompanyName { get; set; }
         public string CompanyImage { get; set; }
@@ -30,6 +31,5 @@ namespace WeHire.Application.DTOs.HiringRequest
         public string TypeRequireName { get; set; }
         public string LevelRequireName { get; set; }
         public List<string> SkillRequireStrings { get; set; }
-        public string PostedTime { get; set; }
     }
 }

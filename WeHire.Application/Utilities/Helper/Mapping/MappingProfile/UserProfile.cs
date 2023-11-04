@@ -21,6 +21,10 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(UserStatus), src.Status)))
                 .ForMember(dest => dest.RoleString, opt => opt.MapFrom(src => Enum.GetName(typeof(RoleEnum), src.RoleId)));
 
+            CreateMap<User, GetUserDTO>()
+                .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(UserStatus), src.Status)))
+                .ForMember(dest => dest.RoleString, opt => opt.MapFrom(src => Enum.GetName(typeof(RoleEnum), src.RoleId)));
+
             CreateMap<User, GetHRLogin>()
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.DateOfBirth)))
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(UserStatus), src.Status)))

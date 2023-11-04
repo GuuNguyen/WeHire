@@ -21,7 +21,6 @@ namespace WeHire.API.Controllers
         {
             _requestService = requestService;
         }
-
        
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetAllFieldRequest>), StatusCodes.Status200OK)]
@@ -99,6 +98,31 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpGet("ByCompany/Expired")]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetExpiredRequestByCompanyId([FromQuery] int companyId,
+                                                                      [FromQuery] PagingQuery query,
+                                                                      [FromQuery] SearchHiringRequestDTO searchKey,
+                                                                      [FromQuery] SearchExtensionDTO searchExtensionKey)
+        {
+            var result = await _requestService.GetExpiredRequestsByCompanyId(companyId, query, searchKey, searchExtensionKey);
+            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
+                       ? await _requestService.GetTotalExpiredRequestsAsync(companyId)
+                       : result.Count;
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponse<GetAllFieldRequest>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
         [HttpGet("Status")]
         [ProducesResponseType(typeof(ApiResponse<List<EnumDetailDTO>>), StatusCodes.Status200OK)]
         public IActionResult GetRequestStatus()
@@ -148,6 +172,19 @@ namespace WeHire.API.Controllers
             return Created(string.Empty, new ApiResponse<GetRequestDTO>()
             {
                 Code = StatusCodes.Status201Created,
+                Data = result
+            });
+        }
+
+        [HttpDelete("{requestId}")]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteRequest(int requestId)
+        {
+            var result = await _requestService.DeleteHiringRequest(requestId);
+
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
                 Data = result
             });
         }
