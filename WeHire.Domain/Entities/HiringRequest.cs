@@ -16,6 +16,7 @@ namespace WeHire.Domain.Entities
         }
 
         public int RequestId { get; set; }
+        public string RequestCode { get; set; }
         public string JobTitle { get; set; }
         public string JobDescription { get; set; }
         public int? NumberOfDev { get; set; }

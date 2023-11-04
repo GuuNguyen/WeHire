@@ -15,10 +15,6 @@ namespace WeHire.Application.DTOs.Agreement
         public decimal? CommissionRate { get; set; }
         public decimal? TotalCommission { get; set; }
         public string CompanyPartnerName { get; set; }
-        public string ConfidentialInformation { get; set; }
-        public string ServicesProvided { get; set; }
-        public string CommissionStructure { get; set; }
-        public string TermsAndConditions { get; set; }
         public DateTime? DateSigned { get; set; }
         public string WeHireSignature { get; set; }
         public string CompanyPartnerSignature { get; set; }

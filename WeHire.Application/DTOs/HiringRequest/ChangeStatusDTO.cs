@@ -8,6 +8,12 @@ namespace WeHire.Application.DTOs.HiringRequest
 {
     public class ChangeStatusDTO
     {
+        public class CancelRequestModel
+        {
+            public int RequestId { get; set; }
+            public string RejectionReason { get; set; } = string.Empty;
+            public bool IsCompanyPartner { get; set; }
+        }
         public class WaitingStatus
         {
             public int RequestId { get; set; }

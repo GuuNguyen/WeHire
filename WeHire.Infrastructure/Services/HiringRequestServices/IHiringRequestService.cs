@@ -18,8 +18,11 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         public Task<GetRequestDTO> CloneARequestAsync(int requestId);
         public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status);
         public Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
+        public Task<List<GetAllFieldRequest>> GetExpiredRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
         public Task<int> GetTotalRequestsAsync(int? companyId = null);
+        public Task<int> GetTotalExpiredRequestsAsync(int companyId);
         public Task CheckRequestDeadline(DateTime currentTime);
         public List<EnumDetailDTO> GetRequestStatus();
+        public Task<string> DeleteHiringRequest(int requestId);
     }
 }

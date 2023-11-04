@@ -12,10 +12,10 @@ namespace WeHire.Application.DTOs.AssignTask
     {
         public int TaskId { get; set; }
         public string TaskTitle { get; set; }
-        public GetUserDetail Staff { get; set; }
         public string Description { get; set; }
-        public DateTime? Deadline { get; set; }
+        public string Deadline { get; set; }
         public string StatusString { get; set; }
-        public List<GetDevDTO> Devs { get; set; }
+        public GetUserDTO Staff { get; set; }
+        public List<GetDevTask> Devs { get; set; }
     }
 }

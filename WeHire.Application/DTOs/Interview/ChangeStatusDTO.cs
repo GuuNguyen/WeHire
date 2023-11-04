@@ -9,7 +9,8 @@ namespace WeHire.Application.DTOs.Interview
     public class ChangeStatusDTO
     {
         public int InterviewId { get; set; }
+        public int? AssignStaffId { get; set; }
         public bool isApproved { get; set; }
-
+        public string? RejectionReason { get; set; }
     }
 }

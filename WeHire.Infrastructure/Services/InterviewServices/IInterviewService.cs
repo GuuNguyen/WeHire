@@ -12,11 +12,12 @@ namespace WeHire.Infrastructure.Services.InterviewServices
     {
         public List<GetInterviewDetail> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey);
         public List<GetInterviewDetail> GetInterviewsByManager(PagingQuery query, int? companyId, SearchInterviewWithRequest searchKey);
-        public Task<GetInterviewWithDev> GetInterviewById(int interviewId);  
+        public Task<GetInterviewWithDev> GetInterviewById(int interviewId, PagingQuery query);  
         public Task<List<GetInterviewDetail>> GetInterviewByRequestIdAsync(int requestId);
         public Task<List<GetInterviewDetail>> GetInterviewByDevId(int devId);
         public Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody);
         public Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody);
         public Task<int> GetTotalInterviewsAsync(int? companyId = null);
+        public Task<int> GetTotalDevInterviewAsync(int interviewId);
     }
 }

@@ -12,7 +12,9 @@ namespace WeHire.Application.DTOs.AssignTask
         public int? UserId { get; set; }
         public string TaskTitle { get; set; }
         public string Description { get; set; }
-        public DateTime? Deadline { get; set; }
-        public string StatusString { get; set; }      
+        public string Deadline { get; set; }
+        public int NumberOfInterviewee { get; set; }
+        public string PostedTime { get; set; }
+        public string StatusString { get; set; }    
     }
 }

@@ -10,6 +10,7 @@ namespace WeHire.Domain.Entities
         public Developer()
         {
             Cvs = new HashSet<Cv>();
+            DeveloperInterviews = new HashSet<DeveloperInterview>();
             DeveloperSkills = new HashSet<DeveloperSkill>();
             DeveloperTaskAssignments = new HashSet<DeveloperTaskAssignment>();
             DeveloperTypes = new HashSet<DeveloperType>();
@@ -36,6 +37,7 @@ namespace WeHire.Domain.Entities
         public virtual ScheduleType ScheduleType { get; set; }
         public virtual User User { get; set; }
         public virtual ICollection<Cv> Cvs { get; set; }
+        public virtual ICollection<DeveloperInterview> DeveloperInterviews { get; set; }
         public virtual ICollection<DeveloperSkill> DeveloperSkills { get; set; }
         public virtual ICollection<DeveloperTaskAssignment> DeveloperTaskAssignments { get; set; }
         public virtual ICollection<DeveloperType> DeveloperTypes { get; set; }

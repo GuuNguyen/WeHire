@@ -11,6 +11,5 @@ namespace WeHire.Application.DTOs.AssignTask
         public string? TaskTitle { get; set; }
         public DateTime? Deadline { get; set; }
         public int? Status { get; set; }
-        public int? UserId { get; set; }
     }
 }

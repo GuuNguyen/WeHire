@@ -138,17 +138,17 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("DevToInterviewing")]
-        [ProducesResponseType(typeof(ApiResponse<List<GetSelectingDevDTO>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusToInterviewing(ChangeStatusToInterviewingDTO requestBody)
-        {
-            var result = await _selectingDevService.ChangeStatusToInterviewingAsync(requestBody);
+        //[HttpPut("DevToInterviewing")]
+        //[ProducesResponseType(typeof(ApiResponse<List<GetSelectingDevDTO>>), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> ChangeStatusToInterviewing(ChangeStatusToInterviewingDTO requestBody)
+        //{
+        //    var result = await _selectingDevService.ChangeStatusToInterviewingAsync(requestBody);
 
-            return Ok(new ApiResponse<List<GetSelectingDevDTO>>()
-            {
-                Code = StatusCodes.Status200OK,
-                Data = result
-            });
-        }
+        //    return Ok(new ApiResponse<List<GetSelectingDevDTO>>()
+        //    {
+        //        Code = StatusCodes.Status200OK,
+        //        Data = result
+        //    });
+        //}
     }
 }

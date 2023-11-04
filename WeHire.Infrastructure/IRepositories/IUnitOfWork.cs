@@ -35,6 +35,8 @@ namespace WeHire.Entity.IRepositories
         IGenericRepository<Notification> NotificationRepository { get; }
         IGenericRepository<NotificationType> NotificationTypeRepository { get; }
         IGenericRepository<UserNotification> UserNotificationRepository { get; }
+        IGenericRepository<UserDevice> UserDeviceRepository { get; }
+        IGenericRepository<DeveloperInterview> DeveloperInterviewRepository { get; }
 
         IDbTransaction BeginTransaction(); 
         Task SaveChangesAsync();

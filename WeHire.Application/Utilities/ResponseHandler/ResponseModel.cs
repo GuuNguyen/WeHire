@@ -21,6 +21,14 @@ namespace WeHire.Application.Utilities.ResponseHandler
             public List<T> Data { get; set; }
         }
 
+        public class PagedApiResponseSpecificData<T>
+        {
+            public int Code { get; set; }
+            public PaginationInfo Paging { get; set; }
+            public T Data { get; set; }
+        }
+
+
         public class PaginationInfo
         {
             public int Page { get; set; }

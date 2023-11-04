@@ -47,10 +47,10 @@ namespace WeHire.API.Controllers
 
         [HttpGet("Unofficial")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetDevDTO>>), StatusCodes.Status200OK)]
-        public IActionResult GetAllUnofficial([FromQuery] PagingQuery query)
+        public async Task<IActionResult> GetAllUnofficial([FromQuery] PagingQuery query)
         {
             var result = _devService.GetUnofficialDev(query);
-            var total = result.Count;
+            var total = await _devService.GetTotalUnofficialAsync();
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,

@@ -20,7 +20,8 @@ namespace WeHire.Infrastructure.BackgroundJob.HiringRequest
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var currentTime = DateTime.Now;
+            var currentTime = TimeZoneInfo.ConvertTime(DateTime.Now,
+                              TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
             await _hiringRequestService.CheckRequestDeadline(currentTime);
         }
     }

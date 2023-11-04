@@ -10,6 +10,6 @@ namespace WeHire.Application.DTOs.DeveloperTaskAssignment
     {
         public int DeveloperId { get; set; }
         public int TaskId { get; set; }
-        public int Status { get; set; }
+        public bool IsApproved { get; set; }
     }
 }

@@ -36,6 +36,8 @@ namespace WeHire.Entity.Repositories
         private IGenericRepository<Notification> _NotificationRepository;
         private IGenericRepository<NotificationType> _NotificationTypeRepository;
         private IGenericRepository<UserNotification> _UserNotificationRepository;
+        private IGenericRepository<UserDevice> _UserDeviceRepository;
+        private IGenericRepository<DeveloperInterview> _DeveloperInterviewRepository;
 
         public UnitOfWork(WeHireDBContext context)
         {
@@ -65,6 +67,8 @@ namespace WeHire.Entity.Repositories
         public IGenericRepository<Notification> NotificationRepository => _NotificationRepository ??= new GenericRepository<Notification>(_context);
         public IGenericRepository<NotificationType> NotificationTypeRepository => _NotificationTypeRepository ??= new GenericRepository<NotificationType>(_context);
         public IGenericRepository<UserNotification> UserNotificationRepository => _UserNotificationRepository ??= new GenericRepository<UserNotification>(_context);
+        public IGenericRepository<UserDevice> UserDeviceRepository => _UserDeviceRepository ??= new GenericRepository<UserDevice>(_context);
+        public IGenericRepository<DeveloperInterview> DeveloperInterviewRepository => _DeveloperInterviewRepository ??= new GenericRepository<DeveloperInterview>(_context);
 
         public void Dispose()
         {

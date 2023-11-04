@@ -20,7 +20,7 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
         public Task<GetSelectingDevDTO> ChangeStatusApprovalByDevAsync(ChangeSelectingDevStatusDTO requestBody);
         public Task<GetSelectingDevDTO> ChangeStatusApprovalByHRAsync(ChangeSelectingDevStatusDTO requestBody);
         public Task<GetSelectingDevDTO> ChangeStatusToOnboardingAsync(ChangeSelectingDevStatusDTO requestBody);
-        public Task<List<GetSelectingDevDTO>> ChangeStatusToInterviewingAsync(ChangeStatusToInterviewingDTO requestBody);
+        public Task ChangeStatusToInterviewingAsync(int requestId);
         public Task<GetSelectingDevDTO> RemoveOutOfListWaitingInterviewAsync(int requestId, int developerId);
         public Task<GetSelectingDevDTO> RejectDeveloperAsync(int requestId, int developerId);
     }

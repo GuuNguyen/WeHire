@@ -17,6 +17,18 @@ namespace WeHire.API.Controllers
             _notificationService = notificationService;
         }
 
+        [HttpGet("Count/{userId}")]
+        [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetNotiCount(int userId)
+        {
+            var result = await _notificationService.GetNotificationCount(userId);
+            return Ok(new ApiResponse<int>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpGet("ByManager")]
         [ProducesResponseType(typeof(ApiResponse<List<GetNotiDetail>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetNotiByManagerAsync()
@@ -27,6 +39,27 @@ namespace WeHire.API.Controllers
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
+        }
+
+        [HttpGet("ByUser/{userId}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetNotiDetail>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetNotiByHrAsync(int userId)
+        {
+            var result = await _notificationService.GetNotificationAsync(userId);
+            return Ok(new ApiResponse<List<GetNotiDetail>>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [HttpGet("Test")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> TestSendNotiFirebaseAsync(string deviceToken, string title, string content,
+                                                         string notificationType, int routeId)
+        {
+            var result = await _notificationService.TestSendNotificationFirebase(deviceToken, title, content, notificationType, routeId);
+            return Ok(result);
         }
     }
 }

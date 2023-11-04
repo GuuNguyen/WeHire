@@ -14,6 +14,7 @@ namespace WeHire.Domain.Entities
 
         public int NotificationId { get; set; }
         public string Content { get; set; }
+        public int? RouteId { get; set; }
         public DateTime CreateAt { get; set; }
         public int? SenderId { get; set; }
         public int? NotiTypeId { get; set; }

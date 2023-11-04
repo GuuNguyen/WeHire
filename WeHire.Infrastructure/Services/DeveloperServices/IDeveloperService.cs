@@ -25,6 +25,7 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
         public Task<GetDevDTO> ActiveDeveloperAsync(int developerId);
         public Task<int> GetTotalItemAsync();
         public Task<int> GetTotalDevWaitingInterviewAsync(int requestId);
+        public Task<int> GetTotalUnofficialAsync();
        
     }
 }

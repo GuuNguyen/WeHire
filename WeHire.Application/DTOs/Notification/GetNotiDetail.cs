@@ -11,6 +11,7 @@ namespace WeHire.Application.DTOs.Notification
         public int NotificationId { get; set; }
         public int SenderId { get; set; }
         public string NotificationTypeName { get; set; }
+        public int RouteId { get; set; }
         public string CompanyName { get; set; }
         public string Content { get; set; }
         public string CreatedTime { get; set; }

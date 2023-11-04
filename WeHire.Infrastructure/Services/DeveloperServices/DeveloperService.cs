@@ -82,13 +82,13 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
 
         public List<GetDevDTO> GetUnofficialDev(PagingQuery query)
         {
-            var unofficialDevs = _unitOfWork.UserRepository.Get(u => u.RoleId == (int)RoleEnum.Unofficial && u.Status == (int)UserStatus.Active)
-                                                           .Include(u => u.Developers.SingleOrDefault()!.User)
-                                                           .SelectMany(u => u.Developers)
-                                                           .Where(d => d.Status == (int)DeveloperStatus.Available);
+            var unofficialDevs = _unitOfWork.DeveloperRepository.Get(d => d.Status == (int)DeveloperStatus.Available &&
+                                                                          d.User.RoleId == (int)RoleEnum.Unofficial && d.User.Status == (int)UserStatus.Active)
+                                                                .Include(d => d.User).AsQueryable();
 
             unofficialDevs = unofficialDevs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-            var mappedList = _mapper.Map<List<GetDevDTO>>(unofficialDevs);
+                
+            var mappedList = _mapper.Map<List<GetDevDTO>>(unofficialDevs.ToList());
             return mappedList;
         }
 
@@ -370,6 +370,14 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             var total = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
                                                                  s.Status == (int)SelectedDevStatus.WaitingInterview)
                                                                .CountAsync();
+            return total;
+        }
+
+        public async Task<int> GetTotalUnofficialAsync()
+        {
+            var total = await _unitOfWork.DeveloperRepository.Get(d => d.Status == (int)DeveloperStatus.Available &&
+                                                                         d.User.RoleId == (int)RoleEnum.Unofficial && d.User.Status == (int)UserStatus.Active)
+                                                               .Include(d => d.User).CountAsync();
             return total;
         }
     }

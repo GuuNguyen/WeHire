@@ -12,8 +12,7 @@ namespace WeHire.Domain.Entities
             AssignTasks = new HashSet<AssignTask>();
             CompanyPartners = new HashSet<CompanyPartner>();
             Developers = new HashSet<Developer>();
-            InterviewAssignStaffs = new HashSet<Interview>();
-            InterviewInterviewers = new HashSet<Interview>();
+            Interviews = new HashSet<Interview>();
             Notifications = new HashSet<Notification>();
             Transactions = new HashSet<Transaction>();
             UserDevices = new HashSet<UserDevice>();
@@ -28,6 +27,8 @@ namespace WeHire.Domain.Entities
         public string PhoneNumber { get; set; }
         public string UserImage { get; set; }
         public DateTime? DateOfBirth { get; set; }
+        public string RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
         public int Status { get; set; }
         public int? RoleId { get; set; }
 
@@ -35,8 +36,7 @@ namespace WeHire.Domain.Entities
         public virtual ICollection<AssignTask> AssignTasks { get; set; }
         public virtual ICollection<CompanyPartner> CompanyPartners { get; set; }
         public virtual ICollection<Developer> Developers { get; set; }
-        public virtual ICollection<Interview> InterviewAssignStaffs { get; set; }
-        public virtual ICollection<Interview> InterviewInterviewers { get; set; }
+        public virtual ICollection<Interview> Interviews { get; set; }
         public virtual ICollection<Notification> Notifications { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
         public virtual ICollection<UserDevice> UserDevices { get; set; }

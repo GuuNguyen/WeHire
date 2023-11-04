@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Skill;
 using WeHire.Application.DTOs.User;
+using WeHire.Infrastructure.Services.AccountServices;
 using WeHire.Infrastructure.Services.UserServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
@@ -13,20 +14,21 @@ namespace WeHire.API.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IAccountService _accountService;
 
-        public AccountController(IUserService userService)
+        public AccountController(IAccountService accountService)
         {
-            _userService = userService;
+            _accountService = accountService;
         }
 
         [HttpPost("SignUp")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateUserAsync(CreateUserDTO requestBody)
         {
-            var result = await _userService.CreateUserAsync(requestBody);
+            var result = await _accountService.HrSignUpAsync(requestBody);
 
-            return Created(string.Empty, new ApiResponse<GetUserDetail>(){
+            return Created(string.Empty, new ApiResponse<GetUserDetail>()
+            {
                 Code = StatusCodes.Status201Created,
                 Data = result
             });
@@ -37,13 +39,35 @@ namespace WeHire.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> LoginAsync(LoginDTO requestBody)
         {
-            var result = await _userService.LoginAsync(requestBody);
+            var result = await _accountService.LoginAsync(requestBody);
 
             return Ok(new ApiResponse<object>()
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
+        }
+
+
+        [HttpPost("Refresh")]
+        [ProducesResponseType(typeof(ApiResponse<RefreshTokenModel>), StatusCodes.Status201Created)]
+        public async Task<IActionResult> RefreshAsync(RefreshTokenModel requestBody)
+        {
+            var result = await _accountService.RefreshAsync(requestBody);
+
+            return Ok(new ApiResponse<RefreshTokenModel>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [HttpDelete("Revoke")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        public async Task<IActionResult> RevokeAsync(int userId)
+        {
+            await _accountService.RevokeAsync(userId);
+            return NoContent();
         }
     }
 }
