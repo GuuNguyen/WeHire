@@ -10,14 +10,13 @@ namespace WeHire.Infrastructure.Services.InterviewServices
 {
     public interface IInterviewService
     {
-        public List<GetInterviewDetail> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey);
-        public List<GetInterviewDetail> GetInterviewsByManager(PagingQuery query, int? companyId, SearchInterviewWithRequest searchKey);
-        public Task<GetInterviewWithDev> GetInterviewById(int interviewId, PagingQuery query);  
-        public Task<List<GetInterviewDetail>> GetInterviewByRequestIdAsync(int requestId);
-        public Task<List<GetInterviewDetail>> GetInterviewByDevId(int devId);
+        public List<GetListInterview> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey);
+        public List<GetListInterview> GetInterviewsByManager(PagingQuery query, int? companyId, SearchInterviewWithRequest searchKey);
+        public Task<GetInterviewWithDev> GetInterviewById(int interviewId);  
+        public Task<List<GetListInterview>> GetInterviewByRequestIdAsync(int requestId);
+        public Task<List<GetListInterview>> GetInterviewByDevId(int devId);
         public Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody);
         public Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody);
         public Task<int> GetTotalInterviewsAsync(int? companyId = null);
-        public Task<int> GetTotalDevInterviewAsync(int interviewId);
     }
 }

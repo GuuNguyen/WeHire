@@ -25,18 +25,17 @@ namespace WeHire.Application.Utilities.Helper.Mapping
                 mc.AddProfile(new CvProfile());
                 mc.AddProfile(new RoleProfile());
                 mc.AddProfile(new SelectingDevProfile());
-                mc.AddProfile(new AssignTaskProfile());
                 mc.AddProfile(new GenderProfile());
                 mc.AddProfile(new EmploymentTypeProfile());
                 mc.AddProfile(new ScheduleProfile());
-                mc.AddProfile(new AgreementProfile());
                 mc.AddProfile(new TransactionProfile());
                 mc.AddProfile(new InterviewProfile());
                 mc.AddProfile(new EducationProfile());
                 mc.AddProfile(new ProfessionalExperienceProfile());
                 mc.AddProfile(new NotificationProfile());
-                mc.AddProfile(new DeveloperTaskProfile());
                 mc.AddProfile(new UserDeviceProfile());
+                mc.AddProfile(new ProjectProfile());
+                mc.AddProfile(new ProjectTypeProfile());
             });
 
             IMapper mapper = mappingConfig.CreateMapper();

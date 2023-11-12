@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Skill;
 using WeHire.Application.DTOs.User;
@@ -50,7 +51,7 @@ namespace WeHire.API.Controllers
 
 
         [HttpPost("Refresh")]
-        [ProducesResponseType(typeof(ApiResponse<RefreshTokenModel>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<RefreshTokenModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RefreshAsync(RefreshTokenModel requestBody)
         {
             var result = await _accountService.RefreshAsync(requestBody);
@@ -60,6 +61,14 @@ namespace WeHire.API.Controllers
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
+        }
+
+        [HttpGet("Confirm")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<RedirectResult> ConfirmEmailAsync([FromQuery]ConfirmEmailDTO requestBody)
+        {
+            await _accountService.ConfirmEmailAsync(requestBody);
+            return RedirectPermanent("http://localhost:3000/signin");
         }
 
         [HttpDelete("Revoke")]

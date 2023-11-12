@@ -19,12 +19,19 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
         {
             CreateMap<HiringRequest, GetRequestDTO>()
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(HiringRequestStatus), src.Status)));
-
+            
+            CreateMap<HiringRequest, GetListHiringRequest>()
+               .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Project.CompanyId))
+               .ForMember(dest => dest.CompanyImage, opt => opt.MapFrom(src => src.Project.Company.CompanyImage))
+               .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => ConvertDate.ConvertDateTime.ConvertDateToString(src.Duration)))
+               .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))
+               .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(HiringRequestStatus), src.Status)));
+            
             CreateMap<HiringRequest, GetAllFieldRequest>()
+                .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => ConvertDate.ConvertDateTime.ConvertDateToString(src.Duration)))
                 .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiringRequestStatus)src.Status)))
-                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.CompanyName))
-                .ForMember(dest => dest.CompanyImage, opt => opt.MapFrom(src => src.Company.CompanyImage))
+                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Project.CompanyId))
                 .ForMember(dest => dest.EmploymentTypeName, opt => opt.MapFrom(src => src.EmploymentType.EmploymentTypeName))
                 .ForMember(dest => dest.ScheduleTypeName, opt => opt.MapFrom(src => src.ScheduleType.ScheduleTypeName))
                 .ForMember(dest => dest.TypeRequireName, opt => opt.MapFrom(src => src.TypeRequire.TypeName))

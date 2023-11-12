@@ -15,7 +15,7 @@ namespace WeHire.Application.DTOs.HiringRequest
         public int? NumberOfDev { get; set; }
         public decimal? SalaryPerDev { get; set; }
         public DateTime? Duration { get; set; }
-        public int? CompanyId { get; set; }
+        public int? ProjectId { get; set; }
 
         public int? ScheduleTypeId { get; set; }
         public int? EmploymentTypeId { get; set; }

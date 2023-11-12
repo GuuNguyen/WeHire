@@ -11,7 +11,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 {
     public interface IHiringRequestService
     {
-        public List<GetAllFieldRequest> GetAllRequest(PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchSalary);
+        public List<GetListHiringRequest> GetAllRequest(PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchSalary);
         public Task<GetAllFieldRequest> GetRequestByIdAsync(int requestId);
         public Task<GetRequestDTO> CreateRequestAsync(CreateRequestDTO requestBody);
         public Task<GetRequestDTO> UpdateRequestAsync(int requestId, UpdateRequestDTO requestBody);

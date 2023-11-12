@@ -15,6 +15,7 @@ namespace WeHire.Application.DTOs.Developer
         public string UserImage { get; set; }
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }
+        public int InterviewRound { get; set; }
         public string? DevStatusString { get; set; }
         public string? SelectedDevStatus { get; set; }
         public string LevelRequireName { get; set; }

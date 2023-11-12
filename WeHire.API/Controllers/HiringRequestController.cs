@@ -23,7 +23,7 @@ namespace WeHire.API.Controllers
         }
        
         [HttpGet]
-        [ProducesResponseType(typeof(PagedApiResponse<GetAllFieldRequest>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedApiResponse<GetListHiringRequest>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllHiringRequestAsync([FromQuery] PagingQuery query,
                                                                   [FromQuery] SearchHiringRequestDTO searchKey,
                                                                   [FromQuery] SearchExtensionDTO searchExtensionKey)
@@ -39,7 +39,7 @@ namespace WeHire.API.Controllers
                 Total = total
             };
 
-            return Ok(new PagedApiResponse<GetAllFieldRequest>()
+            return Ok(new PagedApiResponse<GetListHiringRequest>()
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,

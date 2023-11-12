@@ -5,13 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WeHire.Application.DTOs.TeamMeeting;
 
 namespace WeHire.Infrastructure.Services.TeamMeetingServices
 {
     public interface ITeamMeetingService
     {
-        //Task<TokenResponse> GetAccessTokenAsync();
-        //Task<MeetingResponse> CreateMeetingAsync();
-        public Task<Event> CreateOnlineMeetingService(OnlineMeetingModel model);
+        public Task<TeamMeetingInfo> CreateOnlineMeetingService(OnlineMeetingModel model);
     }
 }

@@ -34,6 +34,7 @@ namespace WeHire.Application.Utilities.GlobalVariables
             public const string CV_FOLDER = "cv";
             public const string AVATAR_FOLDER = "avatar";
             public const string LOGO_FOLDER = "logo";
+            public const string BACKGROUND_FOLDER = "background";
         }
 
         public static class ErrorMessage
@@ -45,6 +46,10 @@ namespace WeHire.Application.Utilities.GlobalVariables
             public const string HR_NOT_EXIST = "This HR does not exist!";
             public const string STAFF_NOT_EXIST = "This staff does not exist!";
             public const string CURRENT_PASSWORD_NOT_MATCH = "Current password is incorrect";
+            public const string PROJECT_NOT_MATCH = "projectId not match";
+            public const string PROJECT_NOT_EXIST = "This project not exist!";
+            public const string PROJECT_TYPE_NOT_MATCH = "project type not match";
+            public const string PROJECT_TYPE_NOT_EXIST = "project type does not exist!";
             public const string NEW_PASSWORD_NOT_MATCH = "New password does not match";
             public const string DEV_NOT_EXIST = "This developer does not exist!";
             public const string LIST_DEV_NULL = "List developer is null!";
@@ -74,6 +79,7 @@ namespace WeHire.Application.Utilities.GlobalVariables
             public const string ID_FIELD  = "Id";
             public const string REFRESH_TOKEN  = "RefreshToken";
             public const string USER_DEVICE  = "UserDevice";
+            public const string PROJECT_FIELD  = "Project";
             public const string USER_FIELD = "User";
             public const string STAFF_FIELD = "Staff";
             public const string HR_FIELD = "HR";
@@ -86,6 +92,7 @@ namespace WeHire.Application.Utilities.GlobalVariables
             public const string COMPANY_FIELD = "companyId";
             public const string DEV_FIELD = "developerId";
             public const string INTERVIEW_FIELD = "Interview";
+            public const string PROJECT_TYPE_FIELD = "ProjectType";
             public const string REQUEST_BODY = "Request body";
             public const string USER_ID_FIELD = "User Id";
             public const string STATUS_FIELD = "Status";

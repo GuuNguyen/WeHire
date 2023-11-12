@@ -16,10 +16,10 @@ namespace WeHire.Domain.Entities
         public string Description { get; set; }
         public string State { get; set; }
         public int Status { get; set; }
+        public int? WorkLogId { get; set; }
         public int? PayerId { get; set; }
-        public int? AgreementId { get; set; }
 
-        public virtual Agreement Agreement { get; set; }
         public virtual User Payer { get; set; }
+        public virtual WorkLog WorkLog { get; set; }
     }
 }

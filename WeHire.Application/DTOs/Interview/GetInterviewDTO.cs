@@ -9,9 +9,8 @@ namespace WeHire.Application.DTOs.Interview
     public class GetInterviewDTO
     {
         public int InterviewId { get; set; }
-        public int? InterviewerId { get; set; }
-        public int? AssignStaffId { get; set; }
         public int? RequestId { get; set; }
+        public int? DeveloperId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public DateTime? DateOfInterview { get; set; }

@@ -18,7 +18,6 @@ using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using WeHire.Entity.Repositories;
-using WeHire.Infrastructure.Services.AgreementServices;
 using WeHire.Infrastructure.Services.TransactionServices;
 using static System.Net.WebRequestMethods;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
@@ -82,8 +81,8 @@ namespace WeHire.Infrastructure.Services.PaymentServices
             var paymentMethod = "paypal";
             var http = GetPaypalHttpClient();
             var accessToken = await GetAccessTokenAsync();
-            var agreement = await _unitOfWork.AgreementRepository.GetByIdAsync(requestBody.AgreementId)
-                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.AGREEMENT_FIELD, ErrorMessage.AGREEMENT_NOT_EXIST);
+            //var agreement = await _unitOfWork.AgreementRepository.GetByIdAsync(requestBody.AgreementId)
+            //    ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.AGREEMENT_FIELD, ErrorMessage.AGREEMENT_NOT_EXIST);
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "v1/payments/payment");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.access_token);
@@ -91,10 +90,10 @@ namespace WeHire.Infrastructure.Services.PaymentServices
             var newTransaction = new Transaction
             {
                 PayerId = requestBody.PayerId,
-                AgreementId = requestBody.AgreementId,
+                //AgreementId = requestBody.AgreementId,
                 PayPalTransactionId = null,
                 PaymentMethod = paymentMethod,
-                Amount = (int)agreement.TotalCommission,
+                //Amount = (int)agreement.TotalCommission,
                 Currency = currencyStr,
                 Description = requestBody.Description,
                 Timestamp = DateTime.Now,
@@ -121,7 +120,7 @@ namespace WeHire.Infrastructure.Services.PaymentServices
                         {
                             amount = new
                             {
-                                total = (double)agreement.TotalCommission,
+                                //total = (double)agreement.TotalCommission,
                                 currency = currencyStr
                             },
                             description = requestBody.Description,

@@ -13,14 +13,13 @@ namespace WeHire.Domain.Entities
         }
 
         public int NotificationId { get; set; }
+        public string SenderName { get; set; }
         public string Content { get; set; }
         public int? RouteId { get; set; }
-        public DateTime CreateAt { get; set; }
-        public int? SenderId { get; set; }
+        public DateTime CreatedAt { get; set; }
         public int? NotiTypeId { get; set; }
 
         public virtual NotificationType NotiType { get; set; }
-        public virtual User Sender { get; set; }
         public virtual ICollection<UserNotification> UserNotifications { get; set; }
     }
 }

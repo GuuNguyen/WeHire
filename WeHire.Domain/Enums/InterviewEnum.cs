@@ -12,13 +12,13 @@ namespace WeHire.Domain.Enums
         public enum InterviewStatus
         {
             [Description("Waiting Approval")]
-            WaitingManagerApproval = 1,
+            WaitingDevApproval = 1,
 
-            [Description("Interviewing")]
-            Interviewing = 2,
+            [Description("Approved")]
+            Approved = 2,
 
-            [Description("Manager Rejected")]
-            ManagerRejected = 3,
+            [Description("Rejected")]
+            Rejected = 3,
         }
     }
 }

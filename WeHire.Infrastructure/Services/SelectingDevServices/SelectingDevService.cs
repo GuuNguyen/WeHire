@@ -80,12 +80,16 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
             foreach (var dev in devs)
             {
                 var matchingPercentObj = _percentCalculateService.CalculateMatchingPercentage(request, dev);
+                var interviewRound = await _unitOfWork.InterviewRepository.Get(i => i.RequestId == requestId && 
+                                                                                   i.DeveloperId == dev.DeveloperId)
+                                                                          .CountAsync();
                 var mappedDev = _mapper.Map<GetMatchingDev>(dev);
                 _mapper.Map(matchingPercentObj, mappedDev);
                 var selectedDevStatus = _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId
                                                                              && s.DeveloperId == dev.DeveloperId)
                                                                             .Select(s => s.Status).SingleOrDefault();
                 mappedDev.SelectedDevStatus = EnumHelper.GetEnumDescription((SelectedDevStatus)selectedDevStatus);
+                mappedDev.InterviewRound = interviewRound;
                 matchingDevs.Add(mappedDev);
             }
 
@@ -101,9 +105,6 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
                   ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
 
             var devs = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId)
-                                                              .Where(s => s.Status != (int)SelectedDevStatus.WaitingDevAccept &&
-                                                                          s.Status != (int)SelectedDevStatus.DevAccepted &&
-                                                                          s.Status != (int)SelectedDevStatus.DevRejected)
                                                               .Include(s => s.Developer.User)
                                                               .Include(s => s.Developer.Level)
                                                               .Include(s => s.Developer.DeveloperTypes)
@@ -153,7 +154,7 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
                 {
                     Request = request,
                     Developer = dev,
-                    Status = (int)SelectedDevStatus.WaitingDevAccept,
+                    Status = (int)SelectedDevStatus.UnderConsideration,
                 }).ToList();
 
                 foreach (var d in devs)
@@ -170,42 +171,43 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
                 transaction.Rollback();
                 throw;
             }
-         
+
             return ResponseMessage.CREATE_SELECTED_DEV_SUCCESS;
         }
 
-
         public async Task<List<GetSelectingDevDTO>> SendDevToHR(SendDevDTO requestBody)
         {
-            var request = await _unitOfWork.RequestRepository.GetFirstOrDefaultAsync(r =>
-                                                            r.RequestId == requestBody.RequestId &&
-                                                            r.Status == (int)HiringRequestStatus.InProgress)
+            var request = await _unitOfWork.RequestRepository
+                                .GetFirstOrDefaultAsync(r => r.RequestId == requestBody.RequestId &&
+                                                             r.Status == (int)HiringRequestStatus.InProgress)
                  ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
 
-            var developerIds = requestBody.DeveloperIds.ToHashSet();
-            var selectedDevs = await _unitOfWork.SelectedDevRepository
-                                                .Get(s => s.RequestId == requestBody.RequestId
-                                                    && developerIds.Contains(s.DeveloperId))
-                                                .Where(s => s.Status == (int)SelectedDevStatus.DevAccepted)
-                                                .ToListAsync();
+            var validDev = _unitOfWork.DeveloperRepository.Get(d => requestBody.DeveloperIds.Contains(d.DeveloperId))
+                                                          .Where(d => d.Status == (int)DeveloperStatus.Available &&
+                                                                      d.User.RoleId == (int)RoleEnum.Developer);
 
-            if (selectedDevs.Count != requestBody.DeveloperIds.Count())
+            if (validDev.Count() != requestBody.DeveloperIds.Count())
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_COUNT);
-
+            var selectedDevs = new List<SelectedDev>();
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
+                selectedDevs = validDev.Select(dev => new SelectedDev
+                {
+                    Request = request,
+                    Developer = dev,
+                    Status = (int)SelectedDevStatus.UnderConsideration,
+                }).ToList();
+                await _unitOfWork.SelectedDevRepository.InsertRangeAsync(selectedDevs);
+
                 foreach (var selectedDev in selectedDevs)
                 {
-                    selectedDev.Status = (int)SelectedDevStatus.WaitingHRAccept;
+                    selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
                     var dev = _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == selectedDev.DeveloperId).Include(d => d.User).SingleOrDefault();
                     dev!.Status = (int)DeveloperStatus.SelectedOnRequest;
                     request.TargetedDev++;
-                    _unitOfWork.RequestRepository.Update(request);
-                    _unitOfWork.DeveloperRepository.Update(dev);
-                    _unitOfWork.SelectedDevRepository.Update(selectedDev);
                     await _notificationService.SendNotificationAsync(dev.User.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                        $"You have been selected for a hiring request #{request.RequestId}. Let's check it out!");
+                        $"You have been selected for a hiring request #{request.RequestCode}. Let's check it out!");
                 }
                 await _unitOfWork.SaveChangesAsync();
                 transaction.Commit();
@@ -220,22 +222,6 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
             return mappedSelectingDev;
         }
 
-        public async Task<GetSelectingDevDTO> ChangeStatusApprovalByDevAsync(ChangeSelectingDevStatusDTO requestBody)
-        {
-            var selectingDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId
-                                                                     && s.DeveloperId == requestBody.DeveloperId
-                                                                     && s.Status == (int)SelectedDevStatus.WaitingDevAccept
-                                                                    ).SingleOrDefaultAsync();
-            if (selectingDev == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
-
-            selectingDev.Status = requestBody.isApproved ? (int)SelectedDevStatus.DevAccepted : (int)SelectedDevStatus.DevRejected;
-            _unitOfWork.SelectedDevRepository.Update(selectingDev);
-            await _unitOfWork.SaveChangesAsync();
-
-            var mappedSelectingDev = _mapper.Map<GetSelectingDevDTO>(selectingDev);
-            return mappedSelectingDev;
-        }
 
         public async Task<GetSelectingDevDTO> ChangeStatusApprovalByHRAsync(ChangeSelectingDevStatusDTO requestBody)
         {
@@ -245,11 +231,10 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
 
             var selectingDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId
                                                                              && s.DeveloperId == requestBody.DeveloperId
-                                                                             && s.Status == (int)SelectedDevStatus.WaitingHRAccept)
+                                                                             && s.Status == (int)SelectedDevStatus.UnderConsideration)
                                                                       .SingleOrDefaultAsync();
             if (selectingDev == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
-
 
             using var transaction = _unitOfWork.BeginTransaction();
             try
@@ -260,14 +245,14 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
                 {
                     selectingDev.Status = (int)SelectedDevStatus.WaitingInterview;
                     await _notificationService.SendNotificationAsync(dev.User.UserId, selectingDev.RequestId, NotificationTypeString.HIRING_REQUEST,
-                        $"You have been approved on request #{selectingDev.RequestId}. Check out the request details!");
+                        $"You have been approved on request #{request.RequestCode}. Check out the request details!");
                 }
                 else
                 {
-                    selectingDev.Status = (int)SelectedDevStatus.HRRejected;
+                    selectingDev.Status = (int)SelectedDevStatus.Rejected;
                     dev.Status = (int)DeveloperStatus.Available;
                     await _notificationService.SendNotificationAsync(dev.User.UserId, selectingDev.RequestId, NotificationTypeString.HIRING_REQUEST,
-                        $"You have been rejected on request #{selectingDev.RequestId}. Check out the request details!");
+                        $"You have been rejected on request #{request.RequestCode}. Check out the request details!");
                 }
                 _unitOfWork.DeveloperRepository.Update(dev);
                 _unitOfWork.SelectedDevRepository.Update(selectingDev);
@@ -283,94 +268,56 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
             return mappedSelectingDev;
         }
 
-        public async Task<GetSelectingDevDTO> ChangeStatusToOnboardingAsync(ChangeSelectingDevStatusDTO requestBody)
-        {
-            var selectingDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId
-                                                                     && s.DeveloperId == requestBody.DeveloperId
-                                                                     && s.Status == (int)SelectedDevStatus.Interviewing
-                                                                    ).SingleOrDefaultAsync();
-            if (selectingDev == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
-            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(requestBody.DeveloperId);
-
-            using var transaction = _unitOfWork.BeginTransaction();
-            try
-            {
-                if (requestBody.isApproved)
-                {
-                    selectingDev.Status = (int)SelectedDevStatus.OnBoarding;
-                    dev.Status = (int)DeveloperStatus.OnWorking;
-                }
-                else
-                {
-                    selectingDev.Status = (int)SelectedDevStatus.HRRejected;
-                    dev.Status = (int)DeveloperStatus.Available;
-                }
-                _unitOfWork.DeveloperRepository.Update(dev);
-                _unitOfWork.SelectedDevRepository.Update(selectingDev);
-                await _unitOfWork.SaveChangesAsync();
-                transaction.Commit();
-            }
-            catch (Exception)
-            {
-                transaction.Rollback();
-                throw;
-            }
-
-            var mappedSelectingDev = _mapper.Map<GetSelectingDevDTO>(selectingDev);
-            return mappedSelectingDev;
-        }
-
-        public async Task<GetSelectingDevDTO> RemoveOutOfListWaitingInterviewAsync(int requestId, int developerId)
-        {
-            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
-                                                                               s.DeveloperId == developerId &&
-                                                                               s.Status == (int)SelectedDevStatus.WaitingInterview)
-                                                                     .SingleOrDefaultAsync();
-            if (selectedDev != null)
-            {
-                selectedDev.Status = (int)SelectedDevStatus.WaitingHRAccept;
-                await _unitOfWork.SaveChangesAsync();
-            }
-
-            var mappedSelectedDev = _mapper.Map<GetSelectingDevDTO>(selectedDev);
-            return mappedSelectedDev;
-        }
 
         public async Task<GetSelectingDevDTO> RejectDeveloperAsync(int requestId, int developerId)
         {
+            var request = await _unitOfWork.RequestRepository.GetByIdAsync(requestId)
+                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
+
             var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
                                                                               s.DeveloperId == developerId)
                                                                      .Include(s => s.Developer)
                                                                      .SingleOrDefaultAsync();
             if (selectedDev != null)
             {
-                selectedDev.Status = (int)SelectedDevStatus.HRRejected;
+                selectedDev.Status = (int)SelectedDevStatus.Rejected;
                 selectedDev.Developer.Status = (int)DeveloperStatus.Available;
                 _unitOfWork.SelectedDevRepository.Update(selectedDev);
                 await _unitOfWork.SaveChangesAsync();
                 await _notificationService.SendNotificationAsync(selectedDev.Developer.UserId, requestId, NotificationTypeString.HIRING_REQUEST,
-                      $"You have been rejected on request #{requestId}. Check out the request details!");
+                      $"You have been rejected on request #{request.RequestCode}. Check out the request details!");
             }
             var mappedSelectedDev = _mapper.Map<GetSelectingDevDTO>(selectedDev);
             return mappedSelectedDev;
         }
 
-        public async Task ChangeStatusToInterviewingAsync(int requestId)
-        {
-            var selectedDevs = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
-                                                                                s.Status == (int)SelectedDevStatus.WaitingInterview &&
-                                                                                s.Request.Status == (int)HiringRequestStatus.InProgress)
-                                                                      .Include(s => s.Developer)
-                                                                      .Include(s => s.Request)
-                                                                      .ToListAsync();
 
-            selectedDevs.ForEach(d =>
+        public async Task<GetSelectingDevDTO> ChangeStatusToOnboardingAsync(int requestId, int developerId)
+        {
+            var selectingDev = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId
+                                                                     && s.DeveloperId == developerId)
+                                                                      .SingleOrDefaultAsync();
+            if (selectingDev == null)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
+
+            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(developerId);
+
+            using var transaction = _unitOfWork.BeginTransaction();
+            try
             {
-                d.Status = (int)SelectedDevStatus.Interviewing;
-                _unitOfWork.SelectedDevRepository.Update(d);
-            });
-            await _unitOfWork.SaveChangesAsync();
+                selectingDev.Status = (int)SelectedDevStatus.OnBoarding;
+                dev.Status = (int)DeveloperStatus.OnWorking;
+                await _unitOfWork.SaveChangesAsync();
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+
+            var mappedSelectingDev = _mapper.Map<GetSelectingDevDTO>(selectingDev);
+            return mappedSelectingDev;
         }
     }
 }

@@ -18,20 +18,23 @@ using WeHire.Infrastructure.Services.FileServices;
 using Microsoft.EntityFrameworkCore;
 using WeHire.Domain.Entities;
 using WeHire.Application.Utilities.Helper.ConvertDate;
+using WeHire.Infrastructure.Services.EmailServices;
 
 namespace WeHire.Infrastructure.Services.AccountServices
 {
     public class AccountService : IAccountService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly IJwtHelper _jwtHelper;
 
-        public AccountService(IUnitOfWork unitOfWork, IMapper mapper,IJwtHelper jwtHelper)
+        public AccountService(IUnitOfWork unitOfWork, IMapper mapper,IJwtHelper jwtHelper, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
+            _emailService = emailService;
         }
 
         public async Task<object> LoginAsync(LoginDTO userLoginDTO)
@@ -112,6 +115,7 @@ namespace WeHire.Infrastructure.Services.AccountServices
             };
         }
 
+
         public async Task<GetUserDetail> HrSignUpAsync(CreateUserDTO requestBody)
         {
             var user = _mapper.Map<User>(requestBody);
@@ -123,20 +127,44 @@ namespace WeHire.Infrastructure.Services.AccountServices
             if (isExitedEmail)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
 
-            user.Status = (int)UserStatus.Active;
+            user.Status = (int)UserStatus.InActive;
             user.RoleId = (int)RoleEnum.HR;
+            user.ConfirmationCode = GenerateUniqueConfirmationCode();
 
             await _unitOfWork.UserRepository.InsertAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
+            var message = new Message(new string[] { user.Email }, "Account Verification", string.Empty);
+            var fullName = $"{user.FirstName} {user.LastName}";
+            await _emailService.SendEmailAsync(fullName, user.UserId, user.ConfirmationCode, message);
             var newUser = _mapper.Map<GetUserDetail>(user);
             return newUser;
         }
+
 
         public async Task RevokeAsync(int userId)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+            user.RefreshToken = null;
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        private string GenerateUniqueConfirmationCode()
+        {
+            Guid confirmationGuid = Guid.NewGuid();
+            string confirmationCode = confirmationGuid.ToString("N");
+            return confirmationCode;
+        }
+
+        public async Task ConfirmEmailAsync(ConfirmEmailDTO requestBody)
+        {
+            var user = await _unitOfWork.UserRepository.Get(u => u.UserId == requestBody.UserId && 
+                                                           u.ConfirmationCode == requestBody.ConfirmationCode &&
+                                                           u.Status == (int)UserStatus.InActive)
+                                                       .FirstOrDefaultAsync()
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+            user.Status = (int)UserStatus.Active;
             user.RefreshToken = null;
             await _unitOfWork.SaveChangesAsync();
         }

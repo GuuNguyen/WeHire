@@ -85,19 +85,6 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpGet("AssignTask/{taskId}")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldDev>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllDevAsync(int taskId)
-        {
-            var result = await _devService.GetAllDevByTaskIdAsync(taskId);
-
-            return Ok(new PagedApiResponse<GetAllFieldDev>()
-            {
-                Code = StatusCodes.Status200OK,
-                Paging = null,
-                Data = result
-            });
-        }
 
         [HttpGet("{devId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDetail>), StatusCodes.Status200OK)]
