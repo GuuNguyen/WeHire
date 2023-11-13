@@ -12,7 +12,7 @@ namespace WeHire.Infrastructure.Services.NotificationServices
         public Task<int> GetNotificationCount(int userId);
         public Task<List<GetNotiDetail>> GetNotificationByManagerAsync();
         public Task<List<GetNotiDetail>> GetNotificationAsync(int userId);
-        public Task SendManagerNotificationAsync(int? senderId, int routeId, string notiType, string content);
+        public Task SendManagerNotificationAsync(string SenderName, int routeId, string notiType, string content);
         public Task SendNotificationAsync(int? receiverId, int routeId, string notiType, string content);
         public Task<object> TestSendNotificationFirebase(string deviceToken, string title, string content,
                                                          string notificationType, int routeId);

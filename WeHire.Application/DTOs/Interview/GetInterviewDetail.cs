@@ -13,8 +13,6 @@ namespace WeHire.Application.DTOs.Interview
         public int? RequestId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public string? InterviewerName { get; set; }
-        public string? AssignStaffName { get; set; }
         public int? NumOfInterviewee { get; set; }
         public string MeetingLink { get; set; }
         public string OutlookLink { get; set; }

@@ -13,7 +13,6 @@ namespace WeHire.Application.DTOs.Developer
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
-        public string Password { get; set; }
         public string CodeName { get; set; }
         public string UserImage { get; set; }
         public string GenderString { get; set; }

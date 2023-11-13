@@ -4,6 +4,7 @@ using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.DTOs.CV;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Infrastructure.Services.TeamMeetingServices;
+using WeHire.Application.DTOs.TeamMeeting;
 
 namespace WeHire.API.Controllers
 {

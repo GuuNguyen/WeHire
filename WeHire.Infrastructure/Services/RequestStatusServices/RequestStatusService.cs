@@ -36,7 +36,8 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId
                                                                && r.Status == (int)HiringRequestStatus.WaitingApproval)
-                                                             .Include(r => r.Company)
+                                                             .Include(r => r.Project)
+                                                                  .ThenInclude(p => p.Company)
                                                              .SingleOrDefaultAsync();
             if (request == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
@@ -44,15 +45,15 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
             if (requestBody.isApproved)
             {
                 request.Status = (int)HiringRequestStatus.InProgress;
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                    $"Your hiring request #{request.RequestId} has been approved by WeHire.");
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                    $"Your hiring request {request.RequestCode} has been approved by WeHire.");
             }
             else
             {
                 request.Status = (int)HiringRequestStatus.Rejected;
                 request.RejectionReason = requestBody.RejectionReason;
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                    $"Your hiring request #{request.RequestId} has been rejected by WeHire.");
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                    $"Your hiring request {request.RequestCode} has been rejected by WeHire.");
             }
             _unitOfWork.RequestRepository.Update(request);
             await _unitOfWork.SaveChangesAsync();
@@ -64,11 +65,13 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
         public async Task<GetRequestDTO> CancelRequestAsync(CancelRequestModel requestBody)
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId)
-                                                             .Include(r => r.Company)
+                                                             .Include(r => r.Project)
+                                                                .ThenInclude(p => p.Company)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
             var devIds = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId).Select(s => s.DeveloperId).ToListAsync();
-            var companyName = requestBody.IsCompanyPartner ? request.Company.CompanyName : "WeHire";
+            var companyName = requestBody.IsCompanyPartner ? request.Project.Company.CompanyName : "WeHire";
+            
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
@@ -89,7 +92,7 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
                               $"The hiring request #{request.RequestId} has been cancelled by {companyName}.");
                     }
                 }
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                                             $"Your hiring request #{request.RequestId} has been cancelled by {companyName}.");
                 _unitOfWork.RequestRepository.Update(request);
                 await _unitOfWork.SaveChangesAsync();

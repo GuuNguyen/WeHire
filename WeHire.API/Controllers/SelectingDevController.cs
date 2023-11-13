@@ -46,41 +46,28 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPost]
-        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateSelectedDevAsync(CreateSelectedDev requestBody)
-        {
-            var result = await _selectingDevService.CreateSelectDevForRequest(requestBody);
+        //[HttpPost]
+        //[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
+        //public async Task<IActionResult> CreateSelectedDevAsync(CreateSelectedDev requestBody)
+        //{
+        //    var result = await _selectingDevService.CreateSelectDevForRequest(requestBody);
 
-            return Created(string.Empty, new ApiResponse<string>()
-            {
-                Code = StatusCodes.Status201Created,
-                Data = result
-            });
-        }
+        //    return Created(string.Empty, new ApiResponse<string>()
+        //    {
+        //        Code = StatusCodes.Status201Created,
+        //        Data = result
+        //    });
+        //}
 
-        [HttpPut("SendDevToHR")]
-        [ProducesResponseType(typeof(ApiResponse<List<GetSelectingDevDTO>>), StatusCodes.Status200OK)]
+        [HttpPost("SendDevToHR")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetSelectingDevDTO>>), StatusCodes.Status201Created)]
         public async Task<IActionResult> SendDevToHRAsync(SendDevDTO requestBody)
         {
             var result = await _selectingDevService.SendDevToHR(requestBody);
 
-            return Ok(new ApiResponse<List<GetSelectingDevDTO>>()
+            return Created(string.Empty, new ApiResponse<List<GetSelectingDevDTO>>()
             {
-                Code = StatusCodes.Status200OK,
-                Data = result
-            });
-        }
-
-        [HttpPut("ApprovalByDev")]
-        [ProducesResponseType(typeof(ApiResponse<GetSelectingDevDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusApprovalByDev(ChangeSelectingDevStatusDTO requestBody)
-        {
-            var result = await _selectingDevService.ChangeStatusApprovalByDevAsync(requestBody);
-
-            return Ok(new ApiResponse<GetSelectingDevDTO>()
-            {
-                Code = StatusCodes.Status200OK,
+                Code = StatusCodes.Status201Created,
                 Data = result
             });
         }
@@ -101,22 +88,9 @@ namespace WeHire.API.Controllers
        
         [HttpPut("Onboarding")]
         [ProducesResponseType(typeof(ApiResponse<GetSelectingDevDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusToOnboarding(ChangeSelectingDevStatusDTO requestBody)
+        public async Task<IActionResult> ChangeStatusToOnboarding(int requestId, int developerId)
         {
-            var result = await _selectingDevService.ChangeStatusToOnboardingAsync(requestBody);
-
-            return Ok(new ApiResponse<GetSelectingDevDTO>()
-            {
-                Code = StatusCodes.Status200OK,
-                Data = result
-            });
-        }
-
-        [HttpPut("RemoveOutOfWaitingInterview")]
-        [ProducesResponseType(typeof(ApiResponse<GetSelectingDevDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> RemoveOutOfListWaitingInterview(int requestId, int developerId)
-        {
-            var result = await _selectingDevService.RemoveOutOfListWaitingInterviewAsync(requestId, developerId);
+            var result = await _selectingDevService.ChangeStatusToOnboardingAsync(requestId, developerId);
 
             return Ok(new ApiResponse<GetSelectingDevDTO>()
             {
@@ -137,18 +111,5 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
-
-        //[HttpPut("DevToInterviewing")]
-        //[ProducesResponseType(typeof(ApiResponse<List<GetSelectingDevDTO>>), StatusCodes.Status200OK)]
-        //public async Task<IActionResult> ChangeStatusToInterviewing(ChangeStatusToInterviewingDTO requestBody)
-        //{
-        //    var result = await _selectingDevService.ChangeStatusToInterviewingAsync(requestBody);
-
-        //    return Ok(new ApiResponse<List<GetSelectingDevDTO>>()
-        //    {
-        //        Code = StatusCodes.Status200OK,
-        //        Data = result
-        //    });
-        //}
     }
 }

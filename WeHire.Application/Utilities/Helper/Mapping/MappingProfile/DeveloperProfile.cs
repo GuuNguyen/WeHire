@@ -48,7 +48,6 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.User.FirstName))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.User.LastName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
-                .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.User.Password))
                 .ForMember(dest => dest.UserImage, opt => opt.MapFrom(src => src.User.UserImage))
                 .ForMember(dest => dest.RoleString, opt => opt.MapFrom(src => src.User.Role.RoleName))
                 .ForMember(dest => dest.EmploymentTypeName, opt => opt.MapFrom(src => src.EmploymentType.EmploymentTypeName))

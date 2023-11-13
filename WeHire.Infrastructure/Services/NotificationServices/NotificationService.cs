@@ -38,7 +38,7 @@ namespace WeHire.Infrastructure.Services.NotificationServices
                                             .Select(un => un.Notification);
 
             var notifications = await notificationsQuery
-                                .OrderByDescending(n => n.CreateAt)
+                                .OrderByDescending(n => n.CreatedAt)
                                 .ToListAsync();
 
             var distinctNotifications = notifications
@@ -47,11 +47,6 @@ namespace WeHire.Infrastructure.Services.NotificationServices
                                 .ToList();
 
             var mappedNotis = _mapper.Map<List<GetNotiDetail>>(distinctNotifications);
-
-            mappedNotis.ForEach(n =>
-            {
-                n.CompanyName = "WeHire";
-            });
 
             return mappedNotis;
         }
@@ -68,7 +63,7 @@ namespace WeHire.Infrastructure.Services.NotificationServices
                                             .Select(un => un.Notification);
 
             var notifications = await notificationsQuery
-                                .OrderByDescending(n => n.CreateAt)
+                                .OrderByDescending(n => n.CreatedAt)
                                 .ToListAsync();
 
             var distinctNotifications = notifications
@@ -77,20 +72,6 @@ namespace WeHire.Infrastructure.Services.NotificationServices
                                 .ToList();
 
             var mappedNotis = _mapper.Map<List<GetNotiDetail>>(distinctNotifications);
-            var senderIds = notificationsQuery.Select(n => n.SenderId).ToList();
-
-            var companyNames = await _unitOfWork.CompanyRepository
-                                       .Get(c => senderIds.Contains(c.UserId))
-                                       .ToDictionaryAsync(c => c.UserId, c => c.CompanyName);
-
-            foreach (var noti in mappedNotis)
-            {
-                if (companyNames.TryGetValue(noti.SenderId, out var companyName))
-                {
-                    noti.CompanyName = companyName;
-                }
-            }
-
             return mappedNotis;
         }
 
@@ -99,8 +80,9 @@ namespace WeHire.Infrastructure.Services.NotificationServices
             var type = _unitOfWork.NotificationTypeRepository.Get(nt => nt.NotiTypeName.Equals(notiType)).SingleOrDefault();
             var newNoti = new Domain.Entities.Notification
             {
+                SenderName = "WeHire",
                 Content = content,
-                CreateAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
                 NotiTypeId = type.NotiTypeId,
                 RouteId = routeId,
                 UserNotifications = new List<UserNotification>()
@@ -119,14 +101,14 @@ namespace WeHire.Infrastructure.Services.NotificationServices
             await SendMessageToDevice(new List<int> { (int)receiverId }, notiType, content, notiType, routeId);
         }
 
-        public async Task SendManagerNotificationAsync(int? senderId, int routeId, string notiType, string content)
+        public async Task SendManagerNotificationAsync(string SenderName, int routeId, string notiType, string content)
         {
             var type = _unitOfWork.NotificationTypeRepository.Get(nt => nt.NotiTypeName.Equals(notiType)).SingleOrDefault();
             var newNoti = new Domain.Entities.Notification
             {
-                SenderId = senderId,
+                SenderName = SenderName,
                 Content = content,
-                CreateAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
                 NotiTypeId = type.NotiTypeId,
                 RouteId = routeId
             };

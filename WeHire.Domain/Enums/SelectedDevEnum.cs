@@ -11,29 +11,20 @@ namespace WeHire.Domain.Enums
     {
         public enum SelectedDevStatus
         {
-            [Description("Waiting Dev Approval")]
-            WaitingDevAccept = 1,
-
-            [Description("Dev Accepted")]
-            DevAccepted = 2,
-
-            [Description("Dev Rejected")]
-            DevRejected = 3,
-
-            [Description("Waiting HR Approval")]
-            WaitingHRAccept = 4,
+            [Description("Under Consideration")]
+            UnderConsideration = 1,
 
             [Description("Waiting Interview")]
-            WaitingInterview = 5,
+            WaitingInterview = 2,
 
-            [Description("HR Rejected")]
-            HRRejected = 6,
+            [Description("Interview Scheduled")]
+            InterviewScheduled = 3,
 
-            [Description("Interviewing")]
-            Interviewing = 7,
+            [Description("Rejected")]
+            Rejected = 4,
 
             [Description("Onboarding")]
-            OnBoarding = 8,
+            OnBoarding = 5,
         }
-    }
+    }   
 }

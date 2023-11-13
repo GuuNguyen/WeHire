@@ -12,6 +12,12 @@ namespace WeHire.Application.Utilities.Helper.ConvertDate
         {
             return date.HasValue ? date.Value.ToString("dd-MM-yyyy") : "";
         }
+
+        public static string ConvertDateToStringForMeeting(DateTime? date)
+        {
+            return date.HasValue ? date.Value.ToString("yyyy-MM-dd") : "";
+        }
+
         public static DateTime ConvertTimeToSEA(DateTime date)
         {
             var seaDateTime = TimeZoneInfo.ConvertTime(date,

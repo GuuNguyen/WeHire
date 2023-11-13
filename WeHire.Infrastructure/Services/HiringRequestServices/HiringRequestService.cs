@@ -18,7 +18,6 @@ using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.NotificationServices;
-using WeHire.Infrastructure.Services.PostedTimeCalculatorService;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
@@ -32,33 +31,25 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 {
     public class HiringRequestService : IHiringRequestService
     {
-        private readonly IPostedTimeCalculatorService _postedTimeCalculatorService;
         private readonly INotificationService _notificationService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public HiringRequestService(IUnitOfWork unitOfWork, IMapper mapper, 
-                                    IPostedTimeCalculatorService postedTimeCalculatorService,
+        public HiringRequestService(IUnitOfWork unitOfWork, IMapper mapper,
                                     INotificationService notificationService)
         {
-            _postedTimeCalculatorService = postedTimeCalculatorService;
             _notificationService = notificationService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-        public List<GetAllFieldRequest> GetAllRequest(PagingQuery query,
+        public List<GetListHiringRequest> GetAllRequest(PagingQuery query,
                                                       SearchHiringRequestDTO searchKey,
                                                       SearchExtensionDTO searchExtensionKey)
         {
             IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.GetAll()
-                                                        .Include(c => c.Company)
-                                                        .Include(r => r.EmploymentType)
-                                                        .Include(r => r.ScheduleType)
-                                                        .Include(lr => lr.LevelRequire)
-                                                        .Include(tr => tr.TypeRequire)
-                                                        .Include(sr => sr.SkillRequires)
-                                                            .ThenInclude(s => s.Skill)
+                                                        .Include(r => r.Project)
+                                                            .ThenInclude(p => p.Company)
                                                         .OrderByDescending(n => n.CreatedAt);
 
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
@@ -66,7 +57,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             requests = requests.SearchItems(searchKey);
             requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
-            var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
+            var mappedRequests = _mapper.Map<List<GetListHiringRequest>>(requests);
             return mappedRequests;
         }
 
@@ -103,9 +94,9 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
                    ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
-            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.Project.CompanyId == companyId &&
                                                                                         r.Status != (int)HiringRequestStatus.Expired)
-                                                                              .Include(c => c.Company)
+                                                                              .Include(c => c.Project)
                                                                               .Include(r => r.EmploymentType)
                                                                               .Include(r => r.ScheduleType)
                                                                               .Include(lr => lr.LevelRequire)
@@ -128,9 +119,9 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
                   ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
-            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.Project.CompanyId == companyId &&
                                                                                         r.Status == (int)HiringRequestStatus.Expired)
-                                                                              .Include(c => c.Company)
+                                                                              .Include(c => c.Project)
                                                                               .Include(r => r.EmploymentType)
                                                                               .Include(r => r.ScheduleType)
                                                                               .Include(lr => lr.LevelRequire)
@@ -151,7 +142,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         public async Task<GetAllFieldRequest> GetRequestByIdAsync(int requestId)
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestId)
-                                                             .Include(r => r.Company)
+                                                             .Include(r => r.Project)
                                                              .Include(r => r.EmploymentType)
                                                              .Include(r => r.ScheduleType)
                                                              .Include(r => r.TypeRequire)
@@ -164,7 +155,6 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var mappedRequest = _mapper.Map<GetAllFieldRequest>(request);
             return mappedRequest;
         }
-
 
         public async Task<GetRequestDTO> CreateRequestAsync(CreateRequestDTO requestBody)
         {
@@ -182,12 +172,11 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 && requestBody.SalaryPerDev == null && requestBody.isSaved)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.REQUEST_BODY, ErrorMessage.NULL_REQUEST_BODY);
 
-            await IsExistCompany(requestBody.CompanyId);
-            var hr = _unitOfWork.CompanyRepository.Get(c => c.CompanyId == requestBody.CompanyId).AsNoTracking()
-                                                  .Include(c => c.User)
-                                                  .Select(c => c.User)
-                                                  .SingleOrDefault();
-
+            var companyName = await _unitOfWork.ProjectRepository.Get(c => c.ProjectId == requestBody.ProjectId)
+                                                                 .Include(c => c.Company)
+                                                                 .Select(c => c.Company.CompanyName)
+                                                                 .SingleOrDefaultAsync();
+   
             var newRequest = _mapper.Map<HiringRequest>(requestBody);
             using var transaction = _unitOfWork.BeginTransaction();
             try
@@ -195,7 +184,6 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 newRequest.RequestCode = await GenerateUniqueCodeName();
                 newRequest.TargetedDev = 0;
                 newRequest.CreatedAt = DateTime.Now;
-                newRequest.BookMark = false;
                 newRequest.Status = requestBody.isSaved ? newRequest.Status = (int)HiringRequestStatus.Saved
                                                         : newRequest.Status = (int)HiringRequestStatus.WaitingApproval;
              
@@ -207,7 +195,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                 await _unitOfWork.SaveChangesAsync();
                 if (!requestBody.isSaved)
                 {
-                    await _notificationService.SendManagerNotificationAsync(hr!.UserId, newRequest.RequestId, NotificationTypeString.HIRING_REQUEST,
+                    await _notificationService.SendManagerNotificationAsync(companyName, newRequest.RequestId, NotificationTypeString.HIRING_REQUEST,
                        $"They are posted a new request to hire developers for their company. The request is awaiting your approval.");
                 }
                 transaction.Commit();
@@ -291,12 +279,11 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                     SalaryPerDev = request.SalaryPerDev,
                     Duration = request.Duration,
                     CreatedAt = DateTime.Now,
-                    CompanyId = request.CompanyId,
+                    ProjectId = request.ProjectId,
                     ScheduleTypeId = request.ScheduleTypeId,
                     EmploymentTypeId = request.EmploymentTypeId,
                     TypeRequireId = request.TypeRequireId,
                     LevelRequireId = request.LevelRequireId,
-                    BookMark = false,
                     Status = (int)HiringRequestStatus.Saved,
                 };
                 var skillIds = request.SkillRequires.Select(sr => sr.SkillId).ToList();
@@ -357,7 +344,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         {
             var requests = _unitOfWork.SelectedDevRepository
                                             .Get(s => s.DeveloperId == devId && s.Status == status)
-                                            .Include(r => r.Request.Company)
+                                            .Include(r => r.Request.Project)
                                             .Include(r => r.Request.EmploymentType)
                                             .Include(r => r.Request.ScheduleType)
                                             .Include(r => r.Request.LevelRequire)
@@ -384,7 +371,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 
             if (companyId.HasValue)
             {
-                requestQuery = requestQuery.Where(r => r.CompanyId == companyId.Value);
+                requestQuery = requestQuery.Where(r => r.Project.CompanyId == companyId.Value);
             }
 
             var totalItemCount = await requestQuery.CountAsync();
@@ -392,24 +379,19 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             return totalItemCount;
         }
 
-        private async Task IsExistCompany(int? companyId)
-        {
-            var isExist = await _unitOfWork.CompanyRepository.AnyAsync(c => c.CompanyId == companyId);
-            if (!isExist)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
-        }
 
         public async Task CheckRequestDeadline(DateTime currentTime)
         {
             var requests = await _unitOfWork.RequestRepository.Get(r => r.Status == (int)HiringRequestStatus.InProgress
                                                                        && currentTime > r.Duration)
-                                                              .Include(r => r.Company)
+                                                              .Include(r => r.Project)
+                                                                   .ThenInclude(p => p.Company)
                                                               .ToListAsync();
             if (requests.Any())
             {
                 foreach (var request in requests)
                 {
-                    var hrId = request.Company.UserId;
+                    var hrId = request.Project.Company.UserId;
                     request.Status = (int)HiringRequestStatus.Expired;
                     await _notificationService.SendNotificationAsync(hrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                                          $"Your hiring request #{request.RequestId} has expired!");
@@ -421,8 +403,9 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 
         public Task<int> GetTotalExpiredRequestsAsync(int companyId)
         {
-             var total = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
+             var total = _unitOfWork.RequestRepository.Get(r => r.Project.CompanyId == companyId &&
                                                                 r.Status == (int)HiringRequestStatus.Expired)
+                                                        .Include(r => r.Project)
                                                         .CountAsync();
             return total;
         }
@@ -441,6 +424,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             await _unitOfWork.SaveChangesAsync();
             return "Delete success!";
         }
+
         private async Task<string> GenerateUniqueCodeName()
         {
             Random random = new Random();
@@ -449,7 +433,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             do
             {
                 int randomNumber = random.Next(10000, 100000);
-                codeName = "REQUEST_" + randomNumber.ToString();
+                codeName = "REQ" + randomNumber.ToString();
                 isExistRequestCode = await _unitOfWork.RequestRepository.AnyAsync(d => d.RequestCode == codeName);
             } while (isExistRequestCode);
             return codeName;

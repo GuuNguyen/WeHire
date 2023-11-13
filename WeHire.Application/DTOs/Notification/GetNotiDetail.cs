@@ -9,7 +9,6 @@ namespace WeHire.Application.DTOs.Notification
     public class GetNotiDetail
     {
         public int NotificationId { get; set; }
-        public int SenderId { get; set; }
         public string NotificationTypeName { get; set; }
         public int RouteId { get; set; }
         public string CompanyName { get; set; }

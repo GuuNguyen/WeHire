@@ -20,7 +20,7 @@ namespace WeHire.API.Controllers
         }
 
         [HttpGet("ByManager")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetInterviewDetail>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllInterviewByManager([FromQuery] PagingQuery query,
                                                                   int? companyId,
                                                                   [FromQuery] SearchInterviewWithRequest searchKey)
@@ -35,7 +35,7 @@ namespace WeHire.API.Controllers
                 Size = query.PageSize,
                 Total = total
             };
-            return Ok(new PagedApiResponse<GetInterviewDetail>()
+            return Ok(new PagedApiResponse<GetListInterview>()
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
@@ -44,7 +44,7 @@ namespace WeHire.API.Controllers
         }
 
         [HttpGet("ByHR")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetInterviewDetail>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllInterviewByHR(int? companyId,
                                                             [FromQuery] int? requestId,
                                                             [FromQuery] PagingQuery query,
@@ -60,7 +60,7 @@ namespace WeHire.API.Controllers
                 Size = query.PageSize,
                 Total = total
             };
-            return Ok(new PagedApiResponse<GetInterviewDetail>()
+            return Ok(new PagedApiResponse<GetListInterview>()
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
@@ -69,33 +69,25 @@ namespace WeHire.API.Controllers
         }
 
         [HttpGet("{interviewId}")]
-        [ProducesResponseType(typeof(PagedApiResponseSpecificData<GetInterviewWithDev>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInterviewById(int interviewId,[FromQuery] PagingQuery query)
+        [ProducesResponseType(typeof(ApiResponse<GetInterviewWithDev>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetInterviewById(int interviewId)
         {
-            var result = await _interviewService.GetInterviewById(interviewId, query);
-            var total = await _interviewService.GetTotalDevInterviewAsync(interviewId);
+            var result = await _interviewService.GetInterviewById(interviewId);
 
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total
-            };
-            return Ok(new PagedApiResponseSpecificData<GetInterviewWithDev>()
+            return Ok(new ApiResponse<GetInterviewWithDev>()
             {
                 Code = StatusCodes.Status200OK,
-                Paging = paging,
                 Data = result 
             });
         }
 
         [HttpGet("Request/{requestId}")]
-        [ProducesResponseType(typeof(ApiResponse<List<GetInterviewDetail>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewByRequestId(int requestId)
         {
             var result = await _interviewService.GetInterviewByRequestIdAsync(requestId);
 
-            return Ok(new ApiResponse<List<GetInterviewDetail>>()
+            return Ok(new ApiResponse<List<GetListInterview>>()
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
@@ -104,12 +96,12 @@ namespace WeHire.API.Controllers
 
 
         [HttpGet("Dev/{devId}")]
-        [ProducesResponseType(typeof(ApiResponse<List<GetInterviewDetail>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewByDevId(int devId)
         {
             var result = await _interviewService.GetInterviewByDevId(devId);
 
-            return Ok(new ApiResponse<List<GetInterviewDetail>>()
+            return Ok(new ApiResponse<List<GetListInterview>>()
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
@@ -129,7 +121,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("ApprovalByManager")]
+        [HttpPut("ApprovalByDeveloper")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeStatus(ChangeStatusDTO requestBody)
         {

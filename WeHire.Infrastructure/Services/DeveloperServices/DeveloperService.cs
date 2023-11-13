@@ -127,29 +127,6 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             return newDevDetail;
         }
 
-        public async Task<List<GetAllFieldDev>> GetAllDevByTaskIdAsync(int taskId)
-        {
-            var devs = await _unitOfWork.DeveloperTaskAssignmentRepository.Get(dt => dt.TaskId == taskId).AsNoTracking()
-                                                                          .Include(dt => dt.Developer.User)
-                                                                                .ThenInclude(u => u.Role)
-                                                                          .Include(dt => dt.Developer.Gender)
-                                                                          .Include(r => r.Developer.EmploymentType)
-                                                                          .Include(r => r.Developer.ScheduleType)
-                                                                          .Include(d => d.Developer.Cvs)
-                                                                          .Include(d => d.Developer.Level)
-                                                                          .Include(d => d.Developer.DeveloperSkills)
-                                                                                .ThenInclude(ds => ds.Skill)
-                                                                          .Include(d => d.Developer.DeveloperTypes)
-                                                                                .ThenInclude(dty => dty.Type)
-                                                                          .Select(d => d.Developer)
-                                                                          .ToListAsync();
-            if (devs.Count == 0)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_TASK_FIELD, ErrorMessage.DEV_TASK_NOT_EXIST);
-            var mappedDev = _mapper.Map<List<GetAllFieldDev>>(devs);
-
-            return mappedDev;
-        }
-
         public async Task<GetDevDTO> CreateDevAsync(CreateDevDTO requestBody)
         {
             if (requestBody == null)
@@ -334,10 +311,9 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             do
             {
                 int randomNumber = random.Next(10000, 100000);
-                codeName = "DEV_" + randomNumber.ToString();
+                codeName = "DEV" + randomNumber.ToString();
                 isExistDevCode = await _unitOfWork.DeveloperRepository.AnyAsync(d => d.CodeName == codeName);
             } while (isExistDevCode);
-
             return codeName;
         }
 
