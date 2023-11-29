@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using WeHire.Application.DTOs.CV;
 using WeHire.Application.DTOs.UserDevice;
 using WeHire.Infrastructure.Services.UserDeviceServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
@@ -32,7 +31,7 @@ namespace WeHire.API.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetUserDevice>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateCvAsync(CreateUserDevice requestBody)
+        public async Task<IActionResult> CreateDeviceTokenAsync(CreateUserDevice requestBody)
         {
             var result = await _userDeviceService.CreateUserDevice(requestBody);
 

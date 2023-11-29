@@ -15,10 +15,8 @@ namespace WeHire.Infrastructure.Services.SelectingDevServices
         public Task<List<GetMatchingDev>> GetSelectedDevsForManager(int requestId);
         public Task<List<Developer>> GetSelectedDevsById(int requestId);
         public Task<List<GetMatchingDev>> GetSelectedDevsForHR(int requestId);
-        public Task<string> CreateSelectDevForRequest(CreateSelectedDev selectedDev);
         public Task<List<GetSelectingDevDTO>> SendDevToHR(SendDevDTO requestBody);
         public Task<GetSelectingDevDTO> ChangeStatusApprovalByHRAsync(ChangeSelectingDevStatusDTO requestBody);
-        public Task<GetSelectingDevDTO> ChangeStatusToOnboardingAsync(int requestId, int developerId);
         public Task<GetSelectingDevDTO> RejectDeveloperAsync(int requestId, int developerId);
     }
 }

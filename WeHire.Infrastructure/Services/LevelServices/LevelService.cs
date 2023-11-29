@@ -59,5 +59,24 @@ namespace WeHire.Infrastructure.Services.LevelServices
             var total = await _unitOfWork.LevelRepository.GetAll().CountAsync();
             return total;
         }
+
+
+        public async Task UpdateLevelAsync(UpdateLevelModel requestBody)
+        {
+            var level = await _unitOfWork.LevelRepository.GetByIdAsync(requestBody.LevelId)
+             ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.LEVEL_FIELD, ErrorMessage.LEVEL_NOT_EXIST);
+            var updatedLevel = _mapper.Map(requestBody, level);
+            _unitOfWork.LevelRepository.Update(updatedLevel);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+
+        public async Task DeleteLevelAsync(int levelId)
+        {
+            var level = await _unitOfWork.LevelRepository.GetByIdAsync(levelId)
+             ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.LEVEL_FIELD, ErrorMessage.LEVEL_NOT_EXIST);
+            level.Status = (int)LevelStatus.Inactive;
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

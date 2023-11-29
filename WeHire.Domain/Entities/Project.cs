@@ -10,7 +10,8 @@ namespace WeHire.Domain.Entities
         public Project()
         {
             HiredDevelopers = new HashSet<HiredDeveloper>();
-            HiringRequests = new HashSet<HiringRequest>();
+            JobPositions = new HashSet<JobPosition>();
+            PayPeriods = new HashSet<PayPeriod>();
         }
 
         public int ProjectId { get; set; }
@@ -30,6 +31,7 @@ namespace WeHire.Domain.Entities
         public virtual CompanyPartner Company { get; set; }
         public virtual ProjectType ProjectType { get; set; }
         public virtual ICollection<HiredDeveloper> HiredDevelopers { get; set; }
-        public virtual ICollection<HiringRequest> HiringRequests { get; set; }
+        public virtual ICollection<JobPosition> JobPositions { get; set; }
+        public virtual ICollection<PayPeriod> PayPeriods { get; set; }
     }
 }

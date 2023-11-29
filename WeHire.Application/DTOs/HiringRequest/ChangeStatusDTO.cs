@@ -8,7 +8,7 @@ namespace WeHire.Application.DTOs.HiringRequest
 {
     public class ChangeStatusDTO
     {
-        public class CancelRequestModel
+        public class CloseRequestModel
         {
             public int RequestId { get; set; }
             public string RejectionReason { get; set; } = string.Empty;
@@ -25,7 +25,6 @@ namespace WeHire.Application.DTOs.HiringRequest
         {
             public int RequestId { get; set;}
             public DateTime NewDuration { get; set;}
-            public bool isExtended { get; set; }
         }
     }
 }

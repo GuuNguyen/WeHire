@@ -19,6 +19,12 @@ namespace WeHire.Domain.Enums
 
             [Description("Rejected")]
             Rejected = 3,
+
+            [Description("Completed")]
+            Completed = 4,
+
+            [Description("Cancelled")]
+            Cancelled = 5,
         }
     }
 }

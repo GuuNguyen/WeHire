@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.Level;
+using WeHire.Application.DTOs.Skill;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Infrastructure.Services.LevelServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
@@ -49,6 +50,30 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status201Created,
                 Data = result
+            });
+        }
+
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateLevelAsync(UpdateLevelModel requestBody)
+        {
+            await _levelService.UpdateLevelAsync(requestBody);
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = "Update success",
+            });
+        }
+
+        [HttpDelete("levelId")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteLevelAsync(int skillId)
+        {
+            await _levelService.DeleteLevelAsync(skillId);
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = "Delete success",
             });
         }
     }

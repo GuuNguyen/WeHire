@@ -16,6 +16,7 @@ namespace WeHire.Application.DTOs.Interview
         public string StartTime { get; set; }
         public string EndTime { get; set; }
         public int? NumOfInterviewee { get; set; }
+        public string CompanyImage { get; set; }
         public string MeetingLink { get; set; }
         public string OutlookLink { get; set; }
         public string PostedTime { get; set; }

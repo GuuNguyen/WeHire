@@ -9,7 +9,6 @@ namespace WeHire.Domain.Entities
     {
         public Developer()
         {
-            Cvs = new HashSet<Cv>();
             DeveloperSkills = new HashSet<DeveloperSkill>();
             DeveloperTypes = new HashSet<DeveloperType>();
             Educations = new HashSet<Education>();
@@ -28,15 +27,12 @@ namespace WeHire.Domain.Entities
         public int? UserId { get; set; }
         public int? LevelId { get; set; }
         public int? GenderId { get; set; }
-        public int? ScheduleTypeId { get; set; }
         public int? EmploymentTypeId { get; set; }
 
         public virtual EmploymentType EmploymentType { get; set; }
         public virtual Gender Gender { get; set; }
         public virtual Level Level { get; set; }
-        public virtual ScheduleType ScheduleType { get; set; }
         public virtual User User { get; set; }
-        public virtual ICollection<Cv> Cvs { get; set; }
         public virtual ICollection<DeveloperSkill> DeveloperSkills { get; set; }
         public virtual ICollection<DeveloperType> DeveloperTypes { get; set; }
         public virtual ICollection<Education> Educations { get; set; }

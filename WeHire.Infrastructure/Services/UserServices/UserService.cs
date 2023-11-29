@@ -29,19 +29,15 @@ namespace WeHire.Infrastructure.Services.UserServices
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IJwtHelper _jwtHelper;
         private readonly IFileService _fileService;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper,
-                           IJwtHelper jwtHelper, IFileService fileService)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _jwtHelper = jwtHelper;
             _fileService = fileService;
         }
-
-     
+  
         public async Task<GetUserDetail> GetUserByIdAsync(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
@@ -52,16 +48,6 @@ namespace WeHire.Infrastructure.Services.UserServices
 
             var userDetail = _mapper.Map<GetUserDetail>(user);
             return userDetail;
-        }
-
-        public List<GetUserDetail> GetStaff(PagingQuery query)
-        {
-            var staffs = _unitOfWork.UserRepository.Get(u => u.RoleId == (int)RoleEnum.Staff && u.Status == (int)UserStatus.Active);
-
-            staffs = staffs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
-            var mappedStaffs = _mapper.Map<List<GetUserDetail>>(staffs);
-            return mappedStaffs;
         }
 
         public async Task<object> GetUserLoginAsync(int userId)
@@ -97,9 +83,9 @@ namespace WeHire.Infrastructure.Services.UserServices
         }
 
 
-        public List<GetUserDetail> GetAllUser(PagingQuery query, SearchUserDTO searchKey)
+        public List<GetUserDetail> GetAllUser(int roleId, PagingQuery query, SearchUserDTO searchKey)
         {
-            var users = _unitOfWork.UserRepository.GetAll();
+            var users = _unitOfWork.UserRepository.Get(u => u.RoleId == roleId && u.RoleId != (int)RoleEnum.Developer).AsNoTracking();
 
             users = users.SearchItems(searchKey);
 
@@ -141,6 +127,25 @@ namespace WeHire.Infrastructure.Services.UserServices
 
             user = _mapper.Map(requestBody, user);
             if(requestBody.File != null)
+                user.UserImage = await _fileService.UploadFileAsync(requestBody.File!, requestBody.FirstName + requestBody.LastName, ChildFolderName.AVATAR_FOLDER);
+
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            var userDetail = _mapper.Map<GetUserDetail>(user);
+            return userDetail;
+        }
+
+        public async Task<GetUserDetail> UpdateUserByAdminAsync(int id, UpdateUserAdminDTO requestBody)
+        {
+            if (id != requestBody.UserId)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_ID_FIELD, ErrorMessage.USER_NOT_EXIST);
+
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+
+            user = _mapper.Map(requestBody, user);
+            if (requestBody.File != null)
                 user.UserImage = await _fileService.UploadFileAsync(requestBody.File!, requestBody.FirstName + requestBody.LastName, ChildFolderName.AVATAR_FOLDER);
 
             _unitOfWork.UserRepository.Update(user);

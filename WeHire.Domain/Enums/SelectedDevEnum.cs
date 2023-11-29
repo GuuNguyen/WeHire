@@ -23,8 +23,17 @@ namespace WeHire.Domain.Enums
             [Description("Rejected")]
             Rejected = 4,
 
+            [Description("Contract Processing")]
+            ContractProcessing = 5,
+
             [Description("Onboarding")]
-            OnBoarding = 5,
+            OnBoarding = 6,
+
+            [Description("Contract Failed")]
+            ContractFailed = 7,
+
+            [Description("Request Closed")]
+            RequestClosed = 8,
         }
     }   
 }

@@ -51,5 +51,29 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
+
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateTypeAsync(UpdateTypeModel requestBody)
+        {
+            await _typeService.UpdateTypeAsync(requestBody);
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = "Update success",
+            });
+        }
+
+        [HttpDelete("typeId")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteTypeAsync(int typeId)
+        {
+            await _typeService.DeleteTypeAsync(typeId);
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = "Delete success",
+            });
+        }
     }
 }

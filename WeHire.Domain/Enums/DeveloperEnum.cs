@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,11 +11,17 @@ namespace WeHire.Domain.Enums
     {
         public enum DeveloperStatus
         {
+            [Description("Unavailable")]
             Unavailable = 0,
+
+            [Description("Available")]
             Available = 1,
+
+            [Description("Selected On Request")]
             SelectedOnRequest = 2,
+
+            [Description("On Working")]
             OnWorking = 3,
-            OnTasking = 4,
         }
     }
 }

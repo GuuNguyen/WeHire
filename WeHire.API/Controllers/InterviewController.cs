@@ -43,30 +43,30 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpGet("ByHR")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllInterviewByHR(int? companyId,
-                                                            [FromQuery] int? requestId,
-                                                            [FromQuery] PagingQuery query,
-                                                            [FromQuery] SearchInterviewDTO searchKey)
-        {
-            var result = _interviewService.GetInterviewsByCompany(companyId, requestId, query, searchKey);
+        //[HttpGet("ByHR")]
+        //[ProducesResponseType(typeof(PagedApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> GetAllInterviewByHR(int? companyId,
+        //                                                    [FromQuery] int? requestId,
+        //                                                    [FromQuery] PagingQuery query,
+        //                                                    [FromQuery] SearchInterviewDTO searchKey)
+        //{
+        //    var result = _interviewService.GetInterviewsByCompany(companyId, requestId, query, searchKey);
 
-            var total = !requestId.HasValue && searchKey.AreAllPropertiesNull() ? await _interviewService.GetTotalInterviewsAsync(companyId) 
-                                                                                : result.Count;
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total
-            };
-            return Ok(new PagedApiResponse<GetListInterview>()
-            {
-                Code = StatusCodes.Status200OK,
-                Paging = paging,
-                Data = result
-            });
-        }
+        //    var total = !requestId.HasValue && searchKey.AreAllPropertiesNull() ? await _interviewService.GetTotalInterviewsAsync(companyId) 
+        //                                                                        : result.Count;
+        //    var paging = new PaginationInfo
+        //    {
+        //        Page = query.PageIndex,
+        //        Size = query.PageSize,
+        //        Total = total
+        //    };
+        //    return Ok(new PagedApiResponse<GetListInterview>()
+        //    {
+        //        Code = StatusCodes.Status200OK,
+        //        Paging = paging,
+        //        Data = result
+        //    });
+        //}
 
         [HttpGet("{interviewId}")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewWithDev>), StatusCodes.Status200OK)]
@@ -121,11 +121,50 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpPut("{interviewId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateInterview(int interviewId, UpdateInterviewModel requestBody)
+        {
+            var result = await _interviewService.UpdateInterviewAsync(interviewId, requestBody);
+
+            return Ok(new ApiResponse<GetInterviewDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpPut("ApprovalByDeveloper")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeStatus(ChangeStatusDTO requestBody)
         {
             var result = await _interviewService.ChangeStatusAsync(requestBody);
+
+            return Ok(new ApiResponse<GetInterviewDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [HttpPut("Cancel/{interviewId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CancelInterview(int interviewId)
+        {
+            var result = await _interviewService.CancelInterviewAsync(interviewId);
+
+            return Ok(new ApiResponse<GetInterviewDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [HttpPut("Finish")]
+        [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FinishInterview(int interviewId)
+        {
+            var result = await _interviewService.FinishInterviewAsync(interviewId);
 
             return Ok(new ApiResponse<GetInterviewDTO>()
             {

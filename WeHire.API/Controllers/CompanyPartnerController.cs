@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.CompanyPartner;
 using WeHire.Application.DTOs.User;
+using WeHire.Application.Utilities.Helper.CheckNullProperties;
+using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Infrastructure.Services.ComapnyPartnerServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
@@ -18,6 +20,28 @@ namespace WeHire.API.Controllers
         {
             _companyService = companyService;
         }
+
+
+        [HttpGet]
+        [ProducesResponseType(typeof(PagedApiResponse<GetCompanyDetail>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCompanyAsync([FromQuery] PagingQuery query, [FromQuery] SearchCompanyDTO searchKey)
+        {
+            var result = _companyService.GetCompany(query, searchKey);
+            var total = searchKey.AreAllPropertiesNull() ? await _companyService.GetTotalItemAsync() : result.Count;
+            var paging = new PaginationInfo
+            {
+                Size = query.PageIndex,
+                Page = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponse<GetCompanyDetail>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result,
+                Paging = paging
+            });
+        }
+
 
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetCompanyDetail>), StatusCodes.Status200OK)]

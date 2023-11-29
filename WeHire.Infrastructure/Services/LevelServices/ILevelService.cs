@@ -12,6 +12,8 @@ namespace WeHire.Infrastructure.Services.LevelServices
     {
         public List<GetLevelDetail> GetAllLevel(PagingQuery query, SearchLevelDTO searchKey);
         public Task<GetLevelDetail> CreateLevelAsync(CreateLevelDTO requestBody);
+        public Task UpdateLevelAsync(UpdateLevelModel requestBody);
+        public Task DeleteLevelAsync(int levelId);
         public Task<int> GetTotalItemAsync();
     }
 }

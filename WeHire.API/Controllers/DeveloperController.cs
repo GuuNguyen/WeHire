@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WeHire.Application.DTOs.CV;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiringRequest;
 using WeHire.Application.DTOs.User;
@@ -44,47 +43,17 @@ namespace WeHire.API.Controllers
             });
         }
 
-
-        [HttpGet("Unofficial")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetDevDTO>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllUnofficial([FromQuery] PagingQuery query)
+        [HttpGet("ByProject/{projectId}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetDeveloperInProject>>), StatusCodes.Status200OK)]
+        public IActionResult GetDevByProjectId(int projectId)
         {
-            var result = _devService.GetUnofficialDev(query);
-            var total = await _devService.GetTotalUnofficialAsync();
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total,
-            };
-            return Ok(new PagedApiResponse<GetDevDTO>()
+            var result = _devService.GetDevsByProjectId(projectId);
+            return Ok(new ApiResponse<List<GetDeveloperInProject>>()
             {
                 Code = StatusCodes.Status200OK,
-                Paging = paging,
                 Data = result
             });
         }
-
-        [HttpGet("DevWaitingInterview/{requestId}")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldDev>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDevsWaitingInterview([FromQuery] PagingQuery query, int requestId)
-        {
-            var result = _devService.GetDevsWaitingInterview(query, requestId);
-            var total = await _devService.GetTotalDevWaitingInterviewAsync(requestId);
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total,
-            };
-            return Ok(new PagedApiResponse<GetAllFieldDev>()
-            {
-                Code = StatusCodes.Status200OK,
-                Paging = paging,
-                Data = result
-            });
-        }
-
 
         [HttpGet("{devId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDetail>), StatusCodes.Status200OK)]
@@ -126,16 +95,37 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("Active/{developerId}")]
+        [HttpPut("ByAdmin/{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusDevToActiveAsync(int developerId)
+        public async Task<IActionResult> UpdateDeveloperByAdminAsync(int developerId, [FromForm] UpdateDevByAdmin requestBody)
         {
-            var result = await _devService.ActiveDeveloperAsync(developerId);
+            var result = await _devService.UpdateDevProfileByAdminAsync(developerId, requestBody);
             return Ok(new ApiResponse<GetDevDTO>()
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
+        }
+
+        [HttpPut("{developerId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetDevDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateDeveloperAsync(int developerId, [FromForm] UpdateDevModel requestBody)
+        {
+            var result = await _devService.UpdateDevProfileAsync(developerId, requestBody);
+            return Ok(new ApiResponse<GetDevDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+
+        [HttpPut("UpdateUserStatusOfDeveloper/{developerId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> ChangeStatusDevAsync(ChangeStatusDeveloper requestBody)
+        {
+            await _devService.ChangStatusDeveloperAsync(requestBody);
+            return Ok("Update status success!");
         }
     }
 }

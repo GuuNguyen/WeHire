@@ -36,8 +36,11 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
 
             CreateMap<User, CreateUserDTO>().ReverseMap();
             CreateMap<User, UpdateUserDTO>().ReverseMap();
+            CreateMap<User, UpdateDevModel>().ReverseMap();
+            CreateMap<User, UpdateUserAdminDTO>().ReverseMap();
             CreateMap<User, CreateEmployeeDTO>().ReverseMap();
             CreateMap<User, CreateDevDTO>().ReverseMap();
+            CreateMap<User, UpdateDevByAdmin>().ReverseMap();
         }
     }
 }

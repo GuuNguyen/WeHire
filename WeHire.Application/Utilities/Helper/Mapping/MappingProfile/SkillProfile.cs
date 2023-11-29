@@ -18,7 +18,9 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<Skill, GetSkillDetail>()
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(SkillStatus), src.Status)))
                 .ReverseMap();
+            CreateMap<Skill, GetSkillDeveloper>().ReverseMap();
             CreateMap<Skill, CreateSkillDTO>().ReverseMap();
+            CreateMap<Skill, UpdateSkillModel>().ReverseMap();
         }
     }
 }

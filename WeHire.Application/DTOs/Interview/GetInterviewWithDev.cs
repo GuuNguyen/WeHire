@@ -15,8 +15,10 @@ namespace WeHire.Application.DTOs.Interview
         public string Title { get; set; }
         public string Description { get; set; }
         public int? NumOfInterviewee { get; set; }
-        public string MeetingLink { get; set; }
+        public string MeetingUrl { get; set; }
+        public string OutlookUrl { get; set; }
         public string RejectionReason { get; set; }
+        public string DateOfInterviewMMM { get; set; }
         public string DateOfInterview { get; set; }
         public string StartTime { get; set; }
         public string EndTime { get; set; }

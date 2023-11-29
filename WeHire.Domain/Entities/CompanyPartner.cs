@@ -9,6 +9,7 @@ namespace WeHire.Domain.Entities
     {
         public CompanyPartner()
         {
+            HiringRequests = new HashSet<HiringRequest>();
             Projects = new HashSet<Project>();
         }
 
@@ -27,6 +28,7 @@ namespace WeHire.Domain.Entities
         public int? UserId { get; set; }
 
         public virtual User User { get; set; }
+        public virtual ICollection<HiringRequest> HiringRequests { get; set; }
         public virtual ICollection<Project> Projects { get; set; }
     }
 }

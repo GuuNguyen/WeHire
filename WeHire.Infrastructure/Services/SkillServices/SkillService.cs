@@ -60,5 +60,22 @@ namespace WeHire.Infrastructure.Services.SkillServices
             var total = await _unitOfWork.SkillRepository.GetAll().AsNoTracking().CountAsync();
             return total;
         }
+
+        public async Task UpdateSkillAsync(UpdateSkillModel requestBody)
+        {
+            var skill = await _unitOfWork.SkillRepository.GetByIdAsync(requestBody.SkillId)
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SKILL_FIELD, ErrorMessage.SKILL_NOT_EXIST);
+            var updatedSkill = _mapper.Map(requestBody, skill);
+            _unitOfWork.SkillRepository.Update(updatedSkill);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task DeleteSkillAsync(int skillId)
+        {
+            var skill = await _unitOfWork.SkillRepository.GetByIdAsync(skillId)
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SKILL_FIELD, ErrorMessage.SKILL_NOT_EXIST);
+            skill.Status = (int)SkillStatus.Inactive;
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

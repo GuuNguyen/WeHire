@@ -18,8 +18,6 @@ namespace WeHire.Application.DTOs.Developer
         public DateTime? DateOfBirth { get; set; }
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }
-        public int? Cvid { get; set; }
-        public int? ScheduleTypeId { get; set; }
         public int? EmploymentTypeId { get; set; }
         public int? LevelId { get; set; }
         public List<int> Types { get; set; }

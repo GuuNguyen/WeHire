@@ -11,7 +11,7 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
     public interface IRequestStatusService
     {
         public Task<GetRequestDTO> HandleWaitingStatusAsync(WaitingStatus requestBody);
-        public Task<GetRequestDTO> CancelRequestAsync(CancelRequestModel requestBody);
+        public Task<GetRequestDTO> ClosedRequestAsync(CloseRequestModel requestBody);
         public Task<GetRequestDTO> HandleExpiredStatusAsync(ExpiredStatus requestBody);
     }
 }

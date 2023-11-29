@@ -7,7 +7,7 @@ using WeHire.Application.DTOs.File;
 
 namespace WeHire.Application.DTOs.Project
 {
-    public class CreateProjectDTO : FileDTO
+    public class CreateProjectDTO
     {
         public int? CompanyId { get; set; }
         public string ProjectName { get; set; }

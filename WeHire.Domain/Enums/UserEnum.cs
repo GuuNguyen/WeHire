@@ -12,7 +12,6 @@ namespace WeHire.Domain.Enums
         {
             InActive = 0,
             Active = 1,
-            OnTasking = 2,
         }
     }
 }

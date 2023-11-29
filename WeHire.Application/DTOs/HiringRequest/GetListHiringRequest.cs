@@ -9,7 +9,7 @@ namespace WeHire.Application.DTOs.HiringRequest
     public class GetListHiringRequest
     {
         public int RequestId { get; set; }
-        public int CompanyId { get; set; }
+        public int? CompanyId { get; set; }
         public string CompanyImage { get; set; }
         public string RequestCode { get; set; }
         public string JobTitle { get; set; }

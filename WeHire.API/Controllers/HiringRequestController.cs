@@ -49,7 +49,7 @@ namespace WeHire.API.Controllers
 
         [HttpGet("{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<GetAllFieldRequest>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetRequestByDevId(int requestId)
+        public async Task<IActionResult> GetRequestById(int requestId)
         {
             var result = await _requestService.GetRequestByIdAsync(requestId);
 
@@ -108,6 +108,32 @@ namespace WeHire.API.Controllers
             var result = await _requestService.GetExpiredRequestsByCompanyId(companyId, query, searchKey, searchExtensionKey);
             var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
                        ? await _requestService.GetTotalExpiredRequestsAsync(companyId)
+                       : result.Count;
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponse<GetAllFieldRequest>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
+
+        [HttpGet("ByProject")]
+        [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRequestByProject([FromQuery] int projectId,
+                                                             [FromQuery] PagingQuery query,
+                                                             [FromQuery] SearchHiringRequestDTO searchKey,
+                                                             [FromQuery] SearchExtensionDTO searchExtensionKey)
+        {
+            var result = await _requestService.GetRequestsByProjectId(projectId, query, searchKey, searchExtensionKey);
+            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
+                       ? await _requestService.GetTotalRequestsByProjectIdAsync(projectId)
                        : result.Count;
             var paging = new PaginationInfo
             {

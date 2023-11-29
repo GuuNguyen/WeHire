@@ -31,7 +31,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("ChangeExpiredStatus")]
+        [HttpPut("ExtendDuration")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeExpiredStatusAsync(ExpiredStatus requestBody)
         {
@@ -43,11 +43,11 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("Cancel")]
+        [HttpPut("Closed")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CancelRequestAsync(CancelRequestModel requestBody)
+        public async Task<IActionResult> CloseRequestAsync(CloseRequestModel requestBody)
         {
-            var result = await _requestStatusService.CancelRequestAsync(requestBody);
+            var result = await _requestStatusService.ClosedRequestAsync(requestBody);
             return Ok(new ApiResponse<GetRequestDTO>()
             {
                 Code = StatusCodes.Status200OK,

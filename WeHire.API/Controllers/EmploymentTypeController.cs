@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using WeHire.Application.DTOs.CV;
 using WeHire.Application.DTOs.EmploymentType;
 using WeHire.Infrastructure.Services.EmploymentTypeServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;

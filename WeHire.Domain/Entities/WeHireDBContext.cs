@@ -19,7 +19,6 @@ namespace WeHire.Domain.Entities
 
         public virtual DbSet<CompanyPartner> CompanyPartners { get; set; }
         public virtual DbSet<Contract> Contracts { get; set; }
-        public virtual DbSet<Cv> Cvs { get; set; }
         public virtual DbSet<Developer> Developers { get; set; }
         public virtual DbSet<DeveloperSkill> DeveloperSkills { get; set; }
         public virtual DbSet<DeveloperType> DeveloperTypes { get; set; }
@@ -29,14 +28,16 @@ namespace WeHire.Domain.Entities
         public virtual DbSet<HiredDeveloper> HiredDevelopers { get; set; }
         public virtual DbSet<HiringRequest> HiringRequests { get; set; }
         public virtual DbSet<Interview> Interviews { get; set; }
+        public virtual DbSet<JobPosition> JobPositions { get; set; }
         public virtual DbSet<Level> Levels { get; set; }
         public virtual DbSet<Notification> Notifications { get; set; }
         public virtual DbSet<NotificationType> NotificationTypes { get; set; }
+        public virtual DbSet<PayPeriod> PayPeriods { get; set; }
+        public virtual DbSet<PaySlip> PaySlips { get; set; }
         public virtual DbSet<ProfessionalExperience> ProfessionalExperiences { get; set; }
         public virtual DbSet<Project> Projects { get; set; }
         public virtual DbSet<ProjectType> ProjectTypes { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
-        public virtual DbSet<ScheduleType> ScheduleTypes { get; set; }
         public virtual DbSet<SelectedDev> SelectedDevs { get; set; }
         public virtual DbSet<Skill> Skills { get; set; }
         public virtual DbSet<SkillRequire> SkillRequires { get; set; }
@@ -51,8 +52,8 @@ namespace WeHire.Domain.Entities
         {
             if (!optionsBuilder.IsConfigured)
             {
-                //optionsBuilder.UseSqlServer("server = wehiredb.cfe5z7p8gf69.ap-southeast-2.rds.amazonaws.com,1433; database = WeHireDB;uid=admin;pwd=wehiredatabase;TrustServerCertificate=True;");
-                optionsBuilder.UseSqlServer("server = (local); database = WeHireDB;uid=sa;pwd=1;TrustServerCertificate=True;");
+                optionsBuilder.UseSqlServer("serverserver = wehiredb.cfe5z7p8gf69.ap-southeast-2.rds.amazonaws.com,1433; database = WeHireDB;uid=admin;pwd=wehiredatabase;TrustServerCertificate=True;");
+                //optionsBuilder.UseSqlServer("server = (local); database = WeHireDB;uid=sa;pwd=1;TrustServerCertificate=True;");
             }
         }
 
@@ -63,14 +64,14 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<CompanyPartner>(entity =>
             {
                 entity.HasKey(e => e.CompanyId)
-                    .HasName("PK__CompanyP__2D971CACA02878C8");
+                    .HasName("PK__CompanyP__2D971CAC863495D5");
 
                 entity.ToTable("CompanyPartner");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E380F717DA5")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E38753A4FD1")
                     .IsUnique();
 
-                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DB3ACAA98C")
+                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DB5C774840")
                     .IsUnique();
 
                 entity.Property(e => e.Address).HasMaxLength(300);
@@ -105,46 +106,37 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("Contract");
 
+                entity.HasIndex(e => e.ContractCode, "UQ__Contract__CBECF833FF29CC16")
+                    .IsUnique();
+
+                entity.Property(e => e.BasicSalary).HasColumnType("money");
+
+                entity.Property(e => e.ContractCode).HasMaxLength(50);
+
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
                 entity.Property(e => e.DateSigned).HasColumnType("date");
 
-                entity.Property(e => e.StartWorkingDate).HasColumnType("date");
+                entity.Property(e => e.EmployementType).HasMaxLength(50);
+
+                entity.Property(e => e.FromDate).HasColumnType("date");
+
+                entity.Property(e => e.LegalRepresentation).HasMaxLength(50);
+
+                entity.Property(e => e.LegalRepresentationPosition).HasMaxLength(50);
+
+                entity.Property(e => e.OvertimePayMultiplier).HasColumnType("decimal(5, 2)");
+
+                entity.Property(e => e.ToDate).HasColumnType("date");
 
                 entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
-
-                entity.HasOne(d => d.HiredDeveloper)
-                    .WithMany(p => p.Contracts)
-                    .HasForeignKey(d => d.HiredDeveloperId)
-                    .HasConstraintName("FK__Contract__HiredD__05D8E0BE");
-            });
-
-            modelBuilder.Entity<Cv>(entity =>
-            {
-                entity.ToTable("Cv");
-
-                entity.HasIndex(e => e.CvCode, "UQ__Cv__D5FFA996A9659A33")
-                    .IsUnique();
-
-                entity.Property(e => e.CvCode)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Src)
-                    .IsRequired()
-                    .HasMaxLength(4000);
-
-                entity.HasOne(d => d.Developer)
-                    .WithMany(p => p.Cvs)
-                    .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Cv__DeveloperId__160F4887");
             });
 
             modelBuilder.Entity<Developer>(entity =>
             {
                 entity.ToTable("Developer");
 
-                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D5723B2747")
+                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D5B94FFC06")
                     .IsUnique();
 
                 entity.Property(e => e.AverageSalary).HasColumnType("money");
@@ -161,28 +153,23 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Gender)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.GenderId)
-                    .HasConstraintName("FK__Developer__Gende__7D439ABD");
+                    .HasConstraintName("FK__Developer__Gende__7E37BEF6");
 
                 entity.HasOne(d => d.Level)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.LevelId)
-                    .HasConstraintName("FK__Developer__Level__7C4F7684");
-
-                entity.HasOne(d => d.ScheduleType)
-                    .WithMany(p => p.Developers)
-                    .HasForeignKey(d => d.ScheduleTypeId)
-                    .HasConstraintName("FK__Developer__Sched__7E37BEF6");
+                    .HasConstraintName("FK__Developer__Level__7D439ABD");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Developers)
                     .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK__Developer__UserI__7B5B524B");
+                    .HasConstraintName("FK__Developer__UserI__7C4F7684");
             });
 
             modelBuilder.Entity<DeveloperSkill>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.SkillId })
-                    .HasName("PK__Develope__B3F245E9A6EC13D8");
+                    .HasName("PK__Develope__B3F245E9701DFA6D");
 
                 entity.ToTable("DeveloperSkill");
 
@@ -190,19 +177,19 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.DeveloperSkills)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Devel__1DB06A4F");
+                    .HasConstraintName("FK__Developer__Devel__245D67DE");
 
                 entity.HasOne(d => d.Skill)
                     .WithMany(p => p.DeveloperSkills)
                     .HasForeignKey(d => d.SkillId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Skill__1EA48E88");
+                    .HasConstraintName("FK__Developer__Skill__25518C17");
             });
 
             modelBuilder.Entity<DeveloperType>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.TypeId })
-                    .HasName("PK__Develope__9B1EBCCA2881CFE9");
+                    .HasName("PK__Develope__9B1EBCCA86988F82");
 
                 entity.ToTable("DeveloperType");
 
@@ -210,13 +197,13 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.DeveloperTypes)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__Devel__2180FB33");
+                    .HasConstraintName("FK__Developer__Devel__282DF8C2");
 
                 entity.HasOne(d => d.Type)
                     .WithMany(p => p.DeveloperTypes)
                     .HasForeignKey(d => d.TypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Developer__TypeI__22751F6C");
+                    .HasConstraintName("FK__Developer__TypeI__29221CFB");
             });
 
             modelBuilder.Entity<Education>(entity =>
@@ -238,7 +225,7 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.Educations)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Education__Devel__0F624AF8");
+                    .HasConstraintName("FK__Education__Devel__18EBB532");
             });
 
             modelBuilder.Entity<EmploymentType>(entity =>
@@ -264,32 +251,42 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("HiredDeveloper");
 
-                entity.Property(e => e.Salary).HasColumnType("money");
+                entity.HasOne(d => d.Contract)
+                    .WithMany(p => p.HiredDevelopers)
+                    .HasForeignKey(d => d.ContractId)
+                    .HasConstraintName("FK__HiredDeve__Contr__06CD04F7");
 
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.HiredDevelopers)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__HiredDeve__Devel__02FC7413");
+                    .HasConstraintName("FK__HiredDeve__Devel__07C12930");
+
+                entity.HasOne(d => d.JobPosition)
+                    .WithMany(p => p.HiredDevelopers)
+                    .HasForeignKey(d => d.JobPositionId)
+                    .HasConstraintName("FK__HiredDeve__JobPo__04E4BC85");
 
                 entity.HasOne(d => d.Project)
                     .WithMany(p => p.HiredDevelopers)
                     .HasForeignKey(d => d.ProjectId)
-                    .HasConstraintName("FK__HiredDeve__Proje__02084FDA");
+                    .HasConstraintName("FK__HiredDeve__Proje__05D8E0BE");
             });
 
             modelBuilder.Entity<HiringRequest>(entity =>
             {
                 entity.HasKey(e => e.RequestId)
-                    .HasName("PK__HiringRe__33A8517A2C76255E");
+                    .HasName("PK__HiringRe__33A8517A14F2E326");
 
                 entity.ToTable("HiringRequest");
 
-                entity.HasIndex(e => e.RequestCode, "UQ__HiringRe__CBAB82F6EA8C6A97")
+                entity.HasIndex(e => e.RequestCode, "UQ__HiringRe__CBAB82F62180A5CE")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
                 entity.Property(e => e.Duration).HasColumnType("datetime");
+
+                entity.Property(e => e.ExpiredAt).HasColumnType("datetime");
 
                 entity.Property(e => e.JobDescription).HasMaxLength(4000);
 
@@ -301,37 +298,42 @@ namespace WeHire.Domain.Entities
 
                 entity.Property(e => e.SalaryPerDev).HasColumnType("money");
 
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(p => p.HiringRequests)
+                    .HasForeignKey(d => d.CompanyId)
+                    .HasConstraintName("FK__HiringReq__Compa__72C60C4A");
+
                 entity.HasOne(d => d.EmploymentType)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.EmploymentTypeId)
-                    .HasConstraintName("FK__HiringReq__Emplo__75A278F5");
+                    .HasConstraintName("FK__HiringReq__Emplo__76969D2E");
+
+                entity.HasOne(d => d.JobPosition)
+                    .WithMany(p => p.HiringRequests)
+                    .HasForeignKey(d => d.JobPositionId)
+                    .HasConstraintName("FK__HiringReq__JobPo__73BA3083");
 
                 entity.HasOne(d => d.LevelRequire)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.LevelRequireId)
-                    .HasConstraintName("FK__HiringReq__Level__73BA3083");
-
-                entity.HasOne(d => d.Project)
-                    .WithMany(p => p.HiringRequests)
-                    .HasForeignKey(d => d.ProjectId)
-                    .HasConstraintName("FK__HiringReq__Proje__71D1E811");
-
-                entity.HasOne(d => d.ScheduleType)
-                    .WithMany(p => p.HiringRequests)
-                    .HasForeignKey(d => d.ScheduleTypeId)
-                    .HasConstraintName("FK__HiringReq__Sched__74AE54BC");
+                    .HasConstraintName("FK__HiringReq__Level__75A278F5");
 
                 entity.HasOne(d => d.TypeRequire)
                     .WithMany(p => p.HiringRequests)
                     .HasForeignKey(d => d.TypeRequireId)
-                    .HasConstraintName("FK__HiringReq__TypeR__72C60C4A");
+                    .HasConstraintName("FK__HiringReq__TypeR__74AE54BC");
             });
 
             modelBuilder.Entity<Interview>(entity =>
             {
                 entity.ToTable("Interview");
 
-                entity.HasIndex(e => e.InterviewCode, "UQ__Intervie__D3D4CCDC07CEACFD")
+                entity.HasIndex(e => e.EventId, "UQ__Intervie__7944C811011B943B")
+                    .IsUnique();
+
+                entity.HasIndex(e => e.InterviewCode, "UQ__Intervie__D3D4CCDC1DC5C7CF")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -339,6 +341,8 @@ namespace WeHire.Domain.Entities
                 entity.Property(e => e.DateOfInterview).HasColumnType("date");
 
                 entity.Property(e => e.Description).HasMaxLength(2000);
+
+                entity.Property(e => e.EventId).HasMaxLength(1000);
 
                 entity.Property(e => e.InterviewCode).HasMaxLength(50);
 
@@ -351,12 +355,28 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.Interviews)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Interview__Devel__19DFD96B");
+                    .HasConstraintName("FK__Interview__Devel__208CD6FA");
 
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.Interviews)
                     .HasForeignKey(d => d.RequestId)
-                    .HasConstraintName("FK__Interview__Reque__1AD3FDA4");
+                    .HasConstraintName("FK__Interview__Reque__2180FB33");
+            });
+
+            modelBuilder.Entity<JobPosition>(entity =>
+            {
+                entity.ToTable("JobPosition");
+
+                entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+                entity.Property(e => e.PositionName).HasMaxLength(50);
+
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Project)
+                    .WithMany(p => p.JobPositions)
+                    .HasForeignKey(d => d.ProjectId)
+                    .HasConstraintName("FK__JobPositi__Proje__6EF57B66");
             });
 
             modelBuilder.Entity<Level>(entity =>
@@ -392,13 +412,61 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<NotificationType>(entity =>
             {
                 entity.HasKey(e => e.NotiTypeId)
-                    .HasName("PK__Notifica__54F5A301FA8A44CF");
+                    .HasName("PK__Notifica__54F5A301B3078331");
 
                 entity.ToTable("NotificationType");
 
                 entity.Property(e => e.NotiTypeName)
                     .IsRequired()
                     .HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<PayPeriod>(entity =>
+            {
+                entity.ToTable("PayPeriod");
+
+                entity.HasIndex(e => e.PayPeriodCode, "UQ__PayPerio__DE9A3945696BB2A9")
+                    .IsUnique();
+
+                entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+                entity.Property(e => e.EndDate).HasColumnType("date");
+
+                entity.Property(e => e.PayPeriodCode).HasMaxLength(50);
+
+                entity.Property(e => e.StartDate).HasColumnType("date");
+
+                entity.Property(e => e.TotalAmount).HasColumnType("money");
+
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Project)
+                    .WithMany(p => p.PayPeriods)
+                    .HasForeignKey(d => d.ProjectId)
+                    .HasConstraintName("FK__PayPeriod__Proje__0B91BA14");
+            });
+
+            modelBuilder.Entity<PaySlip>(entity =>
+            {
+                entity.ToTable("PaySlip");
+
+                entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+                entity.Property(e => e.TotalActualWorkedHours).HasColumnType("decimal(5, 2)");
+
+                entity.Property(e => e.TotalEarnings).HasColumnType("money");
+
+                entity.Property(e => e.TotalOvertimeHours).HasColumnType("decimal(5, 2)");
+
+                entity.HasOne(d => d.HiredDeveloper)
+                    .WithMany(p => p.PaySlips)
+                    .HasForeignKey(d => d.HiredDeveloperId)
+                    .HasConstraintName("FK__PaySlip__HiredDe__0F624AF8");
+
+                entity.HasOne(d => d.PayPeriod)
+                    .WithMany(p => p.PaySlips)
+                    .HasForeignKey(d => d.PayPeriodId)
+                    .HasConstraintName("FK__PaySlip__PayPeri__0E6E26BF");
             });
 
             modelBuilder.Entity<ProfessionalExperience>(entity =>
@@ -418,14 +486,14 @@ namespace WeHire.Domain.Entities
                 entity.HasOne(d => d.Developer)
                     .WithMany(p => p.ProfessionalExperiences)
                     .HasForeignKey(d => d.DeveloperId)
-                    .HasConstraintName("FK__Professio__Devel__123EB7A3");
+                    .HasConstraintName("FK__Professio__Devel__1BC821DD");
             });
 
             modelBuilder.Entity<Project>(entity =>
             {
                 entity.ToTable("Project");
 
-                entity.HasIndex(e => e.ProjectCode, "UQ__Project__2F3A49481242483C")
+                entity.HasIndex(e => e.ProjectCode, "UQ__Project__2F3A49481DAB085E")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -470,20 +538,10 @@ namespace WeHire.Domain.Entities
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<ScheduleType>(entity =>
-            {
-                entity.ToTable("ScheduleType");
-
-                entity.Property(e => e.ScheduleTypeName)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
             modelBuilder.Entity<SelectedDev>(entity =>
             {
                 entity.HasKey(e => new { e.RequestId, e.DeveloperId })
-                    .HasName("PK__Selected__3E48D5B5D729B71A");
+                    .HasName("PK__Selected__3E48D5B5A805FD6D");
 
                 entity.ToTable("SelectedDev");
 
@@ -491,13 +549,13 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.SelectedDevs)
                     .HasForeignKey(d => d.DeveloperId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SelectedD__Devel__2A164134");
+                    .HasConstraintName("FK__SelectedD__Devel__30C33EC3");
 
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.SelectedDevs)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SelectedD__Reque__29221CFB");
+                    .HasConstraintName("FK__SelectedD__Reque__2FCF1A8A");
             });
 
             modelBuilder.Entity<Skill>(entity =>
@@ -515,7 +573,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<SkillRequire>(entity =>
             {
                 entity.HasKey(e => new { e.RequestId, e.SkillId })
-                    .HasName("PK__SkillReq__5E5258627269B8E4");
+                    .HasName("PK__SkillReq__5E525862D94E2ABA");
 
                 entity.ToTable("SkillRequire");
 
@@ -523,13 +581,13 @@ namespace WeHire.Domain.Entities
                     .WithMany(p => p.SkillRequires)
                     .HasForeignKey(d => d.RequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SkillRequ__Reque__25518C17");
+                    .HasConstraintName("FK__SkillRequ__Reque__2BFE89A6");
 
                 entity.HasOne(d => d.Skill)
                     .WithMany(p => p.SkillRequires)
                     .HasForeignKey(d => d.SkillId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__SkillRequ__Skill__2645B050");
+                    .HasConstraintName("FK__SkillRequ__Skill__2CF2ADDF");
             });
 
             modelBuilder.Entity<Transaction>(entity =>
@@ -555,15 +613,15 @@ namespace WeHire.Domain.Entities
 
                 entity.Property(e => e.Timestamp).HasColumnType("datetime");
 
+                entity.HasOne(d => d.PayPeriod)
+                    .WithMany(p => p.Transactions)
+                    .HasForeignKey(d => d.PayPeriodId)
+                    .HasConstraintName("FK__Transacti__PayPe__151B244E");
+
                 entity.HasOne(d => d.Payer)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.PayerId)
-                    .HasConstraintName("FK__Transacti__Payer__0C85DE4D");
-
-                entity.HasOne(d => d.WorkLog)
-                    .WithMany(p => p.Transactions)
-                    .HasForeignKey(d => d.WorkLogId)
-                    .HasConstraintName("FK__Transacti__WorkL__0B91BA14");
+                    .HasConstraintName("FK__Transacti__Payer__160F4887");
             });
 
             modelBuilder.Entity<Type>(entity =>
@@ -582,10 +640,10 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("User");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E3885DE4966")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E3878C4A0BB")
                     .IsUnique();
 
-                entity.HasIndex(e => e.Email, "UQ__User__A9D10534329E9D13")
+                entity.HasIndex(e => e.Email, "UQ__User__A9D10534D077FEFB")
                     .IsUnique();
 
                 entity.Property(e => e.ConfirmationCode).HasMaxLength(100);
@@ -637,7 +695,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<UserNotification>(entity =>
             {
                 entity.HasKey(e => new { e.NotificationId, e.UserId })
-                    .HasName("PK__UserNoti__F1B7A2D60974F268");
+                    .HasName("PK__UserNoti__F1B7A2D69958C2D1");
 
                 entity.ToTable("UserNotification");
 
@@ -658,16 +716,12 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("WorkLog");
 
-                entity.Property(e => e.EndDate).HasColumnType("date");
+                entity.Property(e => e.WorkDate).HasColumnType("date");
 
-                entity.Property(e => e.StartDate).HasColumnType("date");
-
-                entity.Property(e => e.TotalSalary).HasColumnType("money");
-
-                entity.HasOne(d => d.HiredDeveloper)
+                entity.HasOne(d => d.PaySlip)
                     .WithMany(p => p.WorkLogs)
-                    .HasForeignKey(d => d.HiredDeveloperId)
-                    .HasConstraintName("FK__WorkLog__HiredDe__08B54D69");
+                    .HasForeignKey(d => d.PaySlipId)
+                    .HasConstraintName("FK__WorkLog__PaySlip__123EB7A3");
             });
 
             OnModelCreatingPartial(modelBuilder);

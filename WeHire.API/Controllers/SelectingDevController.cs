@@ -85,19 +85,6 @@ namespace WeHire.API.Controllers
             });
         }
 
-       
-        [HttpPut("Onboarding")]
-        [ProducesResponseType(typeof(ApiResponse<GetSelectingDevDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusToOnboarding(int requestId, int developerId)
-        {
-            var result = await _selectingDevService.ChangeStatusToOnboardingAsync(requestId, developerId);
-
-            return Ok(new ApiResponse<GetSelectingDevDTO>()
-            {
-                Code = StatusCodes.Status200OK,
-                Data = result
-            });
-        }
 
         [HttpPut("RejectDev")]
         [ProducesResponseType(typeof(ApiResponse<GetSelectingDevDTO>), StatusCodes.Status200OK)]

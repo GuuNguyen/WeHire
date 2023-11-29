@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -7,14 +8,17 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using WeHire.Application.DTOs.File;
 using WeHire.Application.DTOs.Project;
 using WeHire.Application.Utilities.ErrorHandler;
+using WeHire.Application.Utilities.Helper.ConvertDate;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Utilities.Helper.Searching;
 using WeHire.Domain.Entities;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.FileServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.ProjectEnum;
 
 namespace WeHire.Infrastructure.Services.ProjectServices
@@ -62,11 +66,34 @@ namespace WeHire.Infrastructure.Services.ProjectServices
         {
             var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId)
                                                       .Include(p => p.Company)
+                                                      .Include(p => p.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working))
+                                                      .ThenInclude(h => h.Contract)
                                                       .Include(p => p.ProjectType)
                                                       .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
-
             var mappedProject = _mapper.Map<GetProjectDetail>(project);
+
+            mappedProject.MinStartDate = ConvertDateTime.ConvertDateToStringNumber(project.HiredDevelopers.Min(h => h.Contract.FromDate));
+            mappedProject.MaxEndDate = ConvertDateTime.ConvertDateToStringNumber(project.HiredDevelopers.Max(h => h.Contract.ToDate));
+
+            var dayLeft = CalculateRemainingDays(DateTime.Now, project.EndDate);
+            mappedProject.DayLeft = dayLeft;
+            mappedProject.DayLeftPercent = CalculatePercentageRemaining(dayLeft, project.EndDate, project.StartDate);
+            return mappedProject;
+        }
+
+        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, SearchProjectDTO searchKey)
+        {
+            var projects = _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == devId &&
+                                                                         h.Status == devStatusInProject).AsNoTracking()
+                                                              .Include(h => h.Project)
+                                                              .Include(h => h.Project.ProjectType)
+                                                              .Include(h => h.Project.Company)
+                                                              .Select(h => h.Project)
+                                                              .AsQueryable();
+            projects = projects.SearchItems(searchKey);
+
+            var mappedProject = _mapper.Map<List<GetListProjectDTO>>(projects);
             return mappedProject;
         }
 
@@ -74,16 +101,16 @@ namespace WeHire.Infrastructure.Services.ProjectServices
         {
             var isExistCompany = await _unitOfWork.CompanyRepository.AnyAsync(c => c.CompanyId == requestBody.CompanyId);
 
-            if(!isExistCompany)
+            if (!isExistCompany)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
             var newProject = _mapper.Map<Project>(requestBody);
             newProject.ProjectCode = await GenerateUniqueCodeName();
             newProject.CreatedAt = DateTime.Now;
             newProject.NumberOfDev = 0;
-            newProject.Status = (int)ProjectStatus.Preparing;
-            if (requestBody.File != null)
-                newProject.BackgroundImage = await _fileService.UploadFileAsync(requestBody.File!, requestBody.ProjectName, ChildFolderName.BACKGROUND_FOLDER);
+
+            newProject.Status = requestBody.StartDate <= DateTime.Now ? (int)ProjectStatus.InProcess 
+                                                                      : (int)ProjectStatus.Preparing;
             await _unitOfWork.ProjectRepository.InsertAsync(newProject);
             await _unitOfWork.SaveChangesAsync();
 
@@ -93,17 +120,17 @@ namespace WeHire.Infrastructure.Services.ProjectServices
 
         public async Task<GetProjectDTO> UpdateProjectAsync(int projectId, UpdateProjectDTO requestBody)
         {
-            if(projectId != requestBody.ProjectId)
+            if (projectId != requestBody.ProjectId)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_MATCH);
 
-            var project = await _unitOfWork.ProjectRepository.GetByIdAsync(projectId)
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId && 
+                                                                       p.Status == (int)ProjectStatus.Preparing)
+                                                             .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
             var updateProject = _mapper.Map(requestBody, project);
-
-            if (requestBody.File != null)
-                updateProject.BackgroundImage = await _fileService.UploadFileAsync(requestBody.File!, requestBody.ProjectName, ChildFolderName.BACKGROUND_FOLDER);
-            
+            updateProject.Status = requestBody.StartDate <= DateTime.Now ? (int)ProjectStatus.InProcess
+                                                                         : (int)ProjectStatus.Preparing;
             updateProject.UpdatedAt = DateTime.Now;
             _unitOfWork.ProjectRepository.Update(updateProject);
 
@@ -113,11 +140,19 @@ namespace WeHire.Infrastructure.Services.ProjectServices
             return mappedProject;
         }
 
+        public async Task UpdateImageAsync(int projectId, IFormFile file)
+        {
+            var project = await _unitOfWork.ProjectRepository.GetByIdAsync(projectId)
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
+            project.BackgroundImage = await _fileService.UploadFileAsync(file, project.ProjectName, ChildFolderName.BACKGROUND_FOLDER);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task<int> GetTotalProjectAsync(int? companyId = null)
         {
             var query = _unitOfWork.ProjectRepository.GetAll();
 
-            if(companyId.HasValue)
+            if (companyId.HasValue)
                 query.Where(p => p.CompanyId == companyId);
 
             return await query.CountAsync();
@@ -135,6 +170,22 @@ namespace WeHire.Infrastructure.Services.ProjectServices
                 isExistDevCode = await _unitOfWork.DeveloperRepository.AnyAsync(d => d.CodeName == codeName);
             } while (isExistDevCode);
             return codeName;
+        }
+
+        private int CalculateRemainingDays(DateTime currentDate, DateTime? endDate)
+        {
+            TimeSpan remainingTime = (TimeSpan)(endDate - currentDate);
+            return remainingTime.Days;
+        }
+
+        private double CalculatePercentageRemaining(int dayLeft, DateTime? endDate, DateTime? startDate)
+        {
+            TimeSpan totalTimeSpan = (TimeSpan)(endDate - startDate);
+
+            double totalDays = totalTimeSpan.Days;
+
+            double percentageRemaining = Math.Round((dayLeft / totalDays) * 100, 0);
+            return percentageRemaining;
         }
     }
 }

@@ -67,13 +67,12 @@ namespace WeHire.Infrastructure.Services.ProjectTypeServices
             return mappedProjectType;
         }
 
-        public async Task<GetProjectTypeDTO> DeleteProjectTypeAsync(int projectTypeId)
+        public async Task DeleteProjectTypeAsync(int projectTypeId)
         {
             var projectType = await _unitOfWork.ProjectTypeRepository.GetByIdAsync(projectTypeId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_TYPE_FIELD, ErrorMessage.PROJECT_TYPE_NOT_EXIST);
             projectType.Status = (int)ProjectTypeStatus.Inactive;
-            var mappedProjectType = _mapper.Map<GetProjectTypeDTO>(projectType);
-            return mappedProjectType;
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public Task<int> GetTotalItemAsync()

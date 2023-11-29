@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: apiCorsPolicy,
         builder =>
         {
-            builder.WithOrigins("http://localhost:3000")
+            builder.WithOrigins("https://localhost:3000", "http://localhost:3000", "https://frontend-hiring-dev.vercel.app")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();

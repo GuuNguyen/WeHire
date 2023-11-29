@@ -29,8 +29,8 @@ namespace WeHire.Domain.Enums
             [Description("Cancelled")]
             Cancelled = 5,
 
-            [Description("Finished")]
-            Finished = 6,
+            [Description("Closed")]
+            Closed = 6,
 
             [Description("Completed")]
             Completed = 7,

@@ -23,6 +23,7 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                                     .ForMember(dest => dest.DateOfInterview, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.DateOfInterview)))
                                     .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => ConvertTime.ConvertTimeToShortFormat(src.StartTime)))
                                     .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => ConvertTime.ConvertTimeToShortFormat(src.EndTime)))
+                                    .ForMember(dest => dest.CompanyImage, opt => opt.MapFrom(src => src.Request.Company.CompanyImage))
                                     .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((InterviewStatus)src.Status)))
                                     .ReverseMap();
             CreateMap<Interview, GetInterviewDetail>()
@@ -34,7 +35,8 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                                     .ReverseMap();
             CreateMap<Interview, GetInterviewWithDev>()
                                     .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))
-                                    .ForMember(dest => dest.DateOfInterview, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.DateOfInterview)))
+                                    .ForMember(dest => dest.DateOfInterviewMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.DateOfInterview)))
+                                    .ForMember(dest => dest.DateOfInterview, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToStringNumber(src.DateOfInterview)))
                                     .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => ConvertTime.ConvertTimeToShortFormat(src.StartTime)))
                                     .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => ConvertTime.ConvertTimeToShortFormat(src.EndTime)))
                                     .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((InterviewStatus)src.Status)))
@@ -43,6 +45,7 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                                     .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((InterviewStatus)src.Status)))
                                     .ReverseMap();
             CreateMap<Interview, CreateInterviewDTO>().ReverseMap();
+            CreateMap<Interview, UpdateInterviewModel>().ReverseMap();
         }
     }
 }

@@ -13,7 +13,7 @@ namespace WeHire.Infrastructure.Services.ProjectTypeServices
         public List<GetProjectTypeDTO> GetAllProjectTypeAsync(PagingQuery query, SearchProjectType searchKey);
         public Task<GetProjectTypeDTO> CreateProjectTypeAsync(string projectTypeName);
         public Task<GetProjectTypeDTO> UpdateProjectTypeAsync(int projectTypeId, UpdateProjectTypeDTO requestBody);
-        public Task<GetProjectTypeDTO> DeleteProjectTypeAsync(int projectTypeId);
+        public Task DeleteProjectTypeAsync(int projectTypeId);
         public Task<int> GetTotalItemAsync();
     }
 }

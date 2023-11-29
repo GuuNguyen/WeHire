@@ -16,7 +16,11 @@ namespace WeHire.Infrastructure.Services.InterviewServices
         public Task<List<GetListInterview>> GetInterviewByRequestIdAsync(int requestId);
         public Task<List<GetListInterview>> GetInterviewByDevId(int devId);
         public Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody);
+        public Task<GetInterviewDTO> UpdateInterviewAsync(int interviewId, UpdateInterviewModel requestBody);
         public Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody);
+        public Task<GetInterviewDTO> CancelInterviewAsync(int interviewId);
+        public Task ExpireInterviewAsync(DateTime currentTime);
+        public Task<GetInterviewDTO> FinishInterviewAsync(int interviewId);
         public Task<int> GetTotalInterviewsAsync(int? companyId = null);
     }
 }
