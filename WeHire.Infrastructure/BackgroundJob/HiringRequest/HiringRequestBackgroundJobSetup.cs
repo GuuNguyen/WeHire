@@ -17,9 +17,8 @@ namespace WeHire.Infrastructure.BackgroundJob.HiringRequest
             options.AddJob<HiringRequestBackgroundJob>(jobBuilder => jobBuilder.WithIdentity(jobKey))
                    .AddTrigger(trigger =>
                                trigger.ForJob(jobKey)
-                                      .StartAt(DateBuilder.TodayAt(0, 0, 0))
                                       .WithSimpleSchedule(schedule => 
-                                                          schedule.WithIntervalInHours(24)
+                                                          schedule.WithIntervalInHours(1)
                                                                   .RepeatForever()));
         }
     }

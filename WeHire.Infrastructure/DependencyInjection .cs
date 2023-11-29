@@ -6,7 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Application.Utilities.Helper.Mapping;
+using WeHire.Infrastructure.BackgroundJob.Contract;
 using WeHire.Infrastructure.BackgroundJob.HiringRequest;
+using WeHire.Infrastructure.BackgroundJob.Interview;
 using WeHire.Infrastructure.Services;
 
 namespace WeHire.Infrastructure
@@ -27,6 +29,8 @@ namespace WeHire.Infrastructure
             });
 
             services.ConfigureOptions<HiringRequestBackgroundJobSetup>();
+            services.ConfigureOptions<InterviewBackgroundJobSetup>();
+            services.ConfigureOptions<ContractBackgroundJobSetup>();
         }
     }
 }

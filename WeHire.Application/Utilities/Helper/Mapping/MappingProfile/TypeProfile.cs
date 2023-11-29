@@ -17,7 +17,9 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<Domain.Entities.Type, GetTypeDetail>()
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(TypeStatus), src.Status)))
                 .ReverseMap();
+            CreateMap<Domain.Entities.Type, GetTypeDeveloper>().ReverseMap();
             CreateMap<Domain.Entities.Type, CreateTypeDTO>().ReverseMap();
+            CreateMap<Domain.Entities.Type, UpdateTypeModel>().ReverseMap();
         }
     }
 }

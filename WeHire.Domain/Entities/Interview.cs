@@ -9,6 +9,7 @@ namespace WeHire.Domain.Entities
     {
         public int InterviewId { get; set; }
         public string InterviewCode { get; set; }
+        public string EventId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public DateTime? DateOfInterview { get; set; }

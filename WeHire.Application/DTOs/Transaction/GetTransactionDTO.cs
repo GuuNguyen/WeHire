@@ -10,14 +10,14 @@ namespace WeHire.Application.DTOs.Transaction
     {
         public int TransactionId { get; set; }
         public int? PayerId { get; set; }
-        public int? AgreementId { get; set; }
-        public string PayPalTransactionId { get; set; }
-        public DateTime? Timestamp { get; set; }
-        public string PaymentMethod { get; set; }
-        public int Amount { get; set; }
-        public string Currency { get; set; }
-        public string Description { get; set; }
-        public string State { get; set; }
-        public string StatusString { get; set; }
+        public int? PayPeriodId { get; set; }
+        public string? PayPalTransactionId { get; set; }
+        public string Timestamp { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string Amount { get; set; }
+        public string? Currency { get; set; }
+        public string? Description { get; set; }
+        public string? State { get; set; }
+        public string? StatusString { get; set; }
     }
 }

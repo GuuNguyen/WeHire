@@ -73,7 +73,7 @@ namespace WeHire.Infrastructure.Services.AccountServices
                     UserId = user.UserId,
                     DevId = devId,
                     Role = user.Role.RoleName,
-                    Expiration = expirationDate,
+                    Expiration = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken
                 };
@@ -84,13 +84,14 @@ namespace WeHire.Infrastructure.Services.AccountServices
                 {
                     UserId = user.UserId,
                     Role = user.Role.RoleName,
-                    Expiration = expirationDate,
+                    Expiration = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken
                 };
             }
             return response;
         }
+
 
         public async Task<RefreshTokenModel> RefreshAsync(RefreshTokenModel requestBody)
         {

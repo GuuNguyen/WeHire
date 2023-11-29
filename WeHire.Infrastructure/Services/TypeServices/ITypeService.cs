@@ -12,6 +12,8 @@ namespace WeHire.Infrastructure.Services.TypeServices
     {
         public List<GetTypeDetail> GetAllType(PagingQuery query, SearchTypeDTO searchKey);
         public Task<GetTypeDetail> CreateTypeAsync(CreateTypeDTO requestBody);
+        public Task UpdateTypeAsync(UpdateTypeModel requestBody);
+        public Task DeleteTypeAsync(int typeId);
         public Task<int> GetTotalItemAsync();
     }
 }

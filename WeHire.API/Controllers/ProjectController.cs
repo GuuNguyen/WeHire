@@ -5,6 +5,7 @@ using WeHire.Infrastructure.Services.ProjectServices;
 using WeHire.Application.DTOs.Project;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
+using WeHire.Application.DTOs.File;
 
 namespace WeHire.API.Controllers
 {
@@ -63,6 +64,18 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpGet("Developer/{developerId}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetListProjectDTO>>), StatusCodes.Status200OK)]
+        public  IActionResult GetProjectByDeveloperIdt(int developerId, [FromQuery] int devStatusInProject, [FromQuery] SearchProjectDTO searchKey)
+        {
+            var result = _projectService.GetProjectByDevId(developerId, devStatusInProject, searchKey);
+            return Ok(new ApiResponse<List<GetListProjectDTO>>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpGet("{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<GetProjectDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListProjectAsync(int projectId)
@@ -98,6 +111,30 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
+            });
+        }
+
+        [HttpPut("UpdateImage/{projectId}")]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateImageAsync(int projectId, [FromForm] FileDTO file)
+        {
+            if (file == null || file.File == null || file.File.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            var fileExtension = Path.GetExtension(file.File.FileName).ToLowerInvariant();
+            if (fileExtension != ".jpg" && fileExtension != ".png" && fileExtension != ".jpeg")
+            {
+                return BadRequest("Please upload a valid Excel file.");
+            }
+
+            await _projectService.UpdateImageAsync(projectId, file.File);
+
+            return Ok(new ApiResponse<string>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = "Update image successful!"
             });
         }
     }

@@ -11,20 +11,14 @@ namespace WeHire.Domain.Enums
     {
         public enum ProjectStatus
         {
-            [Description("Saved")]
-            Saved = 1,
-
             [Description("Preparing")]
-            Preparing = 2,
+            Preparing = 1,
 
-            [Description("Hiring Process")]
-            HiringProcess = 3,
-
-            [Description("In Process")]
-            InProcess = 4,
+            [Description("In process")]
+            InProcess = 2,
 
             [Description("Closed")]
-            Closed = 5,
+            Closed = 3,
         }
     }
 }

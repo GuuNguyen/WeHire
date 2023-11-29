@@ -16,6 +16,7 @@ using static WeHire.Application.DTOs.HiringRequest.ChangeStatusDTO;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
+using static WeHire.Domain.Enums.SelectedDevEnum;
 
 namespace WeHire.Infrastructure.Services.RequestStatusServices
 {
@@ -36,8 +37,7 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId
                                                                && r.Status == (int)HiringRequestStatus.WaitingApproval)
-                                                             .Include(r => r.Project)
-                                                                  .ThenInclude(p => p.Company)
+                                                             .Include(p => p.Company)
                                                              .SingleOrDefaultAsync();
             if (request == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
@@ -45,14 +45,14 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
             if (requestBody.isApproved)
             {
                 request.Status = (int)HiringRequestStatus.InProgress;
-                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                     $"Your hiring request {request.RequestCode} has been approved by WeHire.");
             }
             else
             {
                 request.Status = (int)HiringRequestStatus.Rejected;
                 request.RejectionReason = requestBody.RejectionReason;
-                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                     $"Your hiring request {request.RequestCode} has been rejected by WeHire.");
             }
             _unitOfWork.RequestRepository.Update(request);
@@ -62,38 +62,45 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
             return mappedRequest;
         }
 
-        public async Task<GetRequestDTO> CancelRequestAsync(CancelRequestModel requestBody)
+        public async Task<GetRequestDTO> ClosedRequestAsync(CloseRequestModel requestBody)
         {
-            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId)
-                                                             .Include(r => r.Project)
-                                                                .ThenInclude(p => p.Company)
+            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId &&
+                                                                (r.Status == (int)HiringRequestStatus.InProgress ||
+                                                                 r.Status == (int)HiringRequestStatus.WaitingApproval ||
+                                                                 r.Status == (int)HiringRequestStatus.Expired))
+                                                             .Include(r => r.Company)
+                                                             .Include(r => r.SelectedDevs)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
             var devIds = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId).Select(s => s.DeveloperId).ToListAsync();
-            var companyName = requestBody.IsCompanyPartner ? request.Project.Company.CompanyName : "WeHire";
-            
+            var companyName = requestBody.IsCompanyPartner ? request.Company.CompanyName : "WeHire";
+
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
-                request.Status = (int)HiringRequestStatus.Rejected;
+                request.Status = (int)HiringRequestStatus.Closed;
                 request.RejectionReason = requestBody.RejectionReason;
                 if (devIds.Any())
                 {
                     var devs = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == request.RequestId &&
-                                                                                devIds.Contains(s.DeveloperId))
+                                                                                devIds.Contains(s.DeveloperId) && 
+                                                                             (s.Status == (int)SelectedDevStatus.UnderConsideration ||
+                                                                              s.Status == (int)SelectedDevStatus.WaitingInterview ||
+                                                                              s.Status == (int)SelectedDevStatus.InterviewScheduled))
                                                             .Include(s => s.Developer)
                                                             .Select(s => s.Developer)
                                                             .ToListAsync();
                     foreach (var dev in devs)
                     {
-                        dev.Status = (int)DeveloperStatus.Available;
-
+                        var selectedDev = request.SelectedDevs.SingleOrDefault(s => s.DeveloperId == dev.DeveloperId);
+                        selectedDev.Status = (int)SelectedDevStatus.RequestClosed;
+                        dev.Status = (int)DeveloperStatus.Available;                       
                         await _notificationService.SendNotificationAsync(dev.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                              $"The hiring request #{request.RequestId} has been cancelled by {companyName}.");
+                              $"The hiring request #{request.RequestId} has been closed by {companyName}.");
                     }
                 }
-                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                            $"Your hiring request #{request.RequestId} has been cancelled by {companyName}.");
+                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                                            $"Your hiring request #{request.RequestId} has been closed by {companyName}.");
                 _unitOfWork.RequestRepository.Update(request);
                 await _unitOfWork.SaveChangesAsync();
                 transaction.Commit();
@@ -114,17 +121,12 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
                                                                && r.Status == (int)HiringRequestStatus.Expired)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
-
-            if (requestBody.isExtended)
+            if (requestBody.NewDuration <= DateTime.Now)
             {
-                request.Duration = requestBody.NewDuration;
-                request.Status = (int)HiringRequestStatus.InProgress;
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Duration", "New duration must be greater than current date!!");
             }
-            else
-            {
-                request.Status = (int)HiringRequestStatus.Finished;
-            }
-            _unitOfWork.RequestRepository.Update(request);
+            request.Duration = requestBody.NewDuration;
+            request.Status = (int)HiringRequestStatus.InProgress;
             await _unitOfWork.SaveChangesAsync();
 
             var mappedRequest = _mapper.Map<GetRequestDTO>(request);

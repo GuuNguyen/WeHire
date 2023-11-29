@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using WeHire.Application.DTOs.CompanyPartner;
 using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.GlobalVariables;
+using WeHire.Application.Utilities.Helper.Pagination;
+using WeHire.Application.Utilities.Helper.Searching;
 using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
@@ -30,6 +32,19 @@ namespace WeHire.Infrastructure.Services.ComapnyPartnerServices
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileService = fileService;
+        }
+
+        public List<GetCompanyDetail> GetCompany(PagingQuery query, SearchCompanyDTO searchKey)
+        {
+            var company = _unitOfWork.CompanyRepository.GetAll().Include(u => u.User).AsQueryable();
+
+            company = company.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
+
+            company = company.SearchItems(searchKey);
+
+            var mappedCompany = _mapper.Map<List<GetCompanyDetail>>(company);
+
+            return mappedCompany;
         }
 
         public async Task<GetCompanyDetail> GetCompanyById(int id)
@@ -111,5 +126,15 @@ namespace WeHire.Infrastructure.Services.ComapnyPartnerServices
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, "Company is existed");
         }
 
+        public Task DeleteCompanyAsync(int companyId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<int> GetTotalItemAsync()
+        {
+            var total = await _unitOfWork.CompanyRepository.GetAll().CountAsync();
+            return total;
+        }
     }
 }

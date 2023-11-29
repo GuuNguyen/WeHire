@@ -11,6 +11,8 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
 {
     public interface ITeamMeetingService
     {
-        public Task<TeamMeetingInfo> CreateOnlineMeetingService(OnlineMeetingModel model);
+        public Task<TeamMeetingInfo> CreateOnlineMeetingAsync(OnlineMeetingModel model);
+        public Task UpdateOnlineMeetingAsync(OnlineMeetingModel model);
+        public Task DeleteMeetingAsync(OnlineMeetingModel model);
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Infrastructure.Services.EducationServices;
 using WeHire.Application.DTOs.Education;
+using WeHire.Application.Utilities.Helper.Pagination;
 
 namespace WeHire.API.Controllers
 {
@@ -17,9 +18,22 @@ namespace WeHire.API.Controllers
             _educationService = educationService;
         }
 
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<List<GetEducationByAdmin>>), StatusCodes.Status200OK)]
+        public IActionResult GetEducationByAdminAsync([FromQuery] PagingQuery query)
+        {
+            var result = _educationService.GetEducationsByAdmin(query);
+
+            return Ok(new ApiResponse<List<GetEducationByAdmin>>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpGet("{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetEducationDTO>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetCvByIdAsync(int developerId)
+        public async Task<IActionResult> GetEducationByIdAsync(int developerId)
         {
             var result = await _educationService.GetEducationsByDevIdAsync(developerId);
             return Ok(new ApiResponse<List<GetEducationDTO>>()
@@ -31,7 +45,7 @@ namespace WeHire.API.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetEducationDTO>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateCvAsync(CreateEducationDTO requestBody)
+        public async Task<IActionResult> CreateEducationAsync(CreateEducationDTO requestBody)
         {
             var result = await _educationService.CreateEducationAsync(requestBody);
 
@@ -40,6 +54,26 @@ namespace WeHire.API.Controllers
                 Code = StatusCodes.Status201Created,
                 Data = result
             });
+        }
+
+        [HttpPut("{educationId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetEducationDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateEducationAsync(int educationId, UpdateEducationModel requestBody)
+        {
+            var result = await _educationService.UpdateEducationAsync(educationId, requestBody);
+            return Ok(new ApiResponse<GetEducationDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [HttpDelete("{educationId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteEducationAsync(int educationId)
+        {
+            await _educationService.DeleteEducationAsync(educationId);
+            return NoContent();
         }
     }
 }

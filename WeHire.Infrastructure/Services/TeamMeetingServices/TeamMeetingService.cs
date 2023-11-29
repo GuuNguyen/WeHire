@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2.Requests;
 using Google.Apis.Auth.OAuth2.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
@@ -12,14 +13,17 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Application.DTOs.TeamMeeting;
+using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.Helper.ConvertDate;
 using WeHire.Entity.IRepositories;
 using static System.Net.WebRequestMethods;
+using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 
 namespace WeHire.Infrastructure.Services.TeamMeetingServices
 {
@@ -44,7 +48,7 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
             _unitOfWork = unitOfWork;
         }
 
-        private GraphServiceClient GetGraphService(string codeAuthencation)
+        private GraphServiceClient GetGraphService(string codeAuthentication, string redirectUrl)
         {
             var scopes = new[] { _scope };
 
@@ -56,23 +60,25 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
             var options = new AuthorizationCodeCredentialOptions
             {
                 AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
-                RedirectUri = new Uri(_redirectUrl)
+                RedirectUri = new Uri(redirectUrl)
             };
 
             var authCodeCredential = new AuthorizationCodeCredential(
-                tenantId, clientId, clientSecret, codeAuthencation, options);
+                tenantId, clientId, clientSecret, codeAuthentication, options);
 
             return new GraphServiceClient(authCodeCredential, scopes);
         }
 
-        public async Task<TeamMeetingInfo> CreateOnlineMeetingService(OnlineMeetingModel model)
+        public async Task<TeamMeetingInfo> CreateOnlineMeetingAsync(OnlineMeetingModel model)
         {
-            var service = GetGraphService(model.authenCode);
+            var service = GetGraphService(model.authenCode, model.RedirectUrl);
 
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
                                                                  .Include(i => i.Developer)
                                                                         .ThenInclude(d => d.User)
-                                                                 .SingleOrDefaultAsync();
+                                                                 .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+
             var developerFullname = $"{interview.Developer.User.FirstName} {interview.Developer.User.LastName}";
             var convertedDate = ConvertDateTime.ConvertDateToStringForMeeting(interview.DateOfInterview);
             var convertedStartTime = ConvertTime.ConvertTimeToShortFormat(interview.StartTime);
@@ -125,6 +131,7 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
 
             interview.MeetingUrl = result.OnlineMeetingUrl;
             interview.OutlookUrl = result.WebLink;
+            interview.EventId = result.Id;
             await _unitOfWork.SaveChangesAsync();
 
             return new TeamMeetingInfo
@@ -132,6 +139,60 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
                 OnlineMeetingUrl = result.OnlineMeetingUrl ?? "",
                 OutlookUrl = result.WebLink ?? ""
             };
+        }
+
+        public async Task UpdateOnlineMeetingAsync(OnlineMeetingModel model)
+        {
+            var service = GetGraphService(model.authenCode, model.RedirectUrl);
+
+            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
+                                                                 .Include(i => i.Developer)
+                                                                        .ThenInclude(d => d.User)
+                                                                 .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+           
+            var convertedDate = ConvertDateTime.ConvertDateToStringForMeeting(interview.DateOfInterview);
+
+            var convertedStartTime = ConvertTime.ConvertTimeToShortFormat(interview.StartTime);
+            var convertedEndTime = ConvertTime.ConvertTimeToShortFormat(interview.EndTime);
+
+            var startTime = $"{convertedDate}T{convertedStartTime}:00+07:00";
+            var endTime = $"{convertedDate}T{convertedEndTime}:00+07:00";
+
+            var requestBody = new Event
+            {
+                Subject = interview.Title,
+                Body = new ItemBody
+                {
+                    ContentType = BodyType.Html,
+                    Content = interview.Description,
+                },
+                Start = new DateTimeTimeZone
+                {
+                    DateTime = startTime,
+                    TimeZone = "Asia/Ho_Chi_Minh",
+                },
+                End = new DateTimeTimeZone
+                {
+                    DateTime = endTime,
+                    TimeZone = "Asia/Ho_Chi_Minh",
+                },
+            };
+
+            await service.Me.Events[interview.EventId].PatchAsync(requestBody);
+        }
+
+        public async Task DeleteMeetingAsync(OnlineMeetingModel model)
+        {
+            var service = GetGraphService(model.authenCode, model.RedirectUrl);
+
+            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
+                                                                 .Include(i => i.Developer)
+                                                                        .ThenInclude(d => d.User)
+                                                                 .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+           
+            await service.Me.Events[interview.EventId].DeleteAsync();
         }
     }
 }

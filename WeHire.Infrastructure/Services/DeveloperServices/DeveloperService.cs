@@ -8,7 +8,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using WeHire.Application.DTOs.CV;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiringRequest;
 using WeHire.Application.DTOs.Level;
@@ -28,7 +27,9 @@ using WeHire.Infrastructure.Services.PercentCalculatServices;
 using WeHire.Infrastructure.Services.SelectingDevServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
+using static WeHire.Domain.Enums.LevelEnum;
 using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.SkillEnum;
 using static WeHire.Domain.Enums.TypeEnum;
@@ -61,10 +62,8 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                                         .GetAll()
                                                         .Include(u => u.User)
                                                             .ThenInclude(u => u.Role)
-                                                        .Include(c => c.Cvs)
                                                         .Include(u => u.Gender)
                                                         .Include(r => r.EmploymentType)
-                                                        .Include(r => r.ScheduleType)
                                                         .Include(l => l.Level)
                                                         .Include(ds => ds.DeveloperSkills)
                                                             .ThenInclude(s => s.Skill)
@@ -80,18 +79,6 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             return mappedDev;
         }
 
-        public List<GetDevDTO> GetUnofficialDev(PagingQuery query)
-        {
-            var unofficialDevs = _unitOfWork.DeveloperRepository.Get(d => d.Status == (int)DeveloperStatus.Available &&
-                                                                          d.User.RoleId == (int)RoleEnum.Unofficial && d.User.Status == (int)UserStatus.Active)
-                                                                .Include(d => d.User).AsQueryable();
-
-            unofficialDevs = unofficialDevs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-                
-            var mappedList = _mapper.Map<List<GetDevDTO>>(unofficialDevs.ToList());
-            return mappedList;
-        }
-
         public async Task<GetDevDetail> GetDevByIdAsync(int devId)
         {
             var dev = await _unitOfWork.DeveloperRepository
@@ -99,8 +86,6 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                             .Include(u => u.User)
                                             .Include(u => u.Gender)
                                             .Include(r => r.EmploymentType)
-                                            .Include(r => r.ScheduleType)
-                                            .Include(c => c.Cvs)
                                             .Include(l => l.Level)
                                             .Include(ds => ds.DeveloperSkills)
                                                 .ThenInclude(s => s.Skill)
@@ -119,116 +104,32 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                 .Where(s => s.Status == (int)TypeStatus.Active)
                                 .ToList();
 
-            var mappedLevel = _mapper.Map<GetLevelDetail>(dev.Level);
-            var mappedSkills = _mapper.Map<List<GetSkillDetail>>(skills);
-            var mappedTypes = _mapper.Map<List<GetTypeDetail>>(types);
+            var mappedLevel = _mapper.Map<GetLevelDeveloper>(dev.Level);
+            var mappedSkills = _mapper.Map<List<GetSkillDeveloper>>(skills);
+            var mappedTypes = _mapper.Map<List<GetTypeDeveloper>>(types);
 
             var newDevDetail = _mapper.Map<GetDevDetail>(dev);
             return newDevDetail;
         }
-
-        public async Task<GetDevDTO> CreateDevAsync(CreateDevDTO requestBody)
+        public List<GetDeveloperInProject> GetDevsByProjectId(int projectId)
         {
-            if (requestBody == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.REQUEST_BODY, ErrorMessage.NULL_REQUEST_BODY);
+            var devs = _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId &&
+                                                           h.Status != (int)HiredDeveloperStatus.ContractProcessing &&
+                                                           h.Status != (int)HiredDeveloperStatus.ContractFailed)
+                                                           .Include(h => h.Developer.HiredDevelopers)
+                                                           .Include(s => s.Developer.User)
+                                                           .Include(s => s.Developer.Gender)
+                                                           .Include(r => r.Developer.EmploymentType)
+                                                           .Include(s => s.Developer.Level)
+                                                           .Include(s => s.Developer.DeveloperTypes)
+                                                               .ThenInclude(dt => dt.Type)
+                                                           .Include(s => s.Developer.DeveloperSkills)
+                                                               .ThenInclude(ds => ds.Skill)
+                                                           .Select(s => s.Developer)
+                                                           .ToList();
 
-            var newUser = _mapper.Map<User>(requestBody);
-            var newDev = _mapper.Map<Developer>(requestBody);
-            using var transaction = _unitOfWork.BeginTransaction();
-            try
-            {
-                await IsExistPhoneNumber(requestBody.PhoneNumber);
-                await IsExistEmail(requestBody.Email);
-
-                newUser.Password = GenerateRandomPassword(12);
-                newUser.Status = (int)UserStatus.Active;
-                newUser.RoleId = (int)RoleEnum.Unofficial;
-
-                newDev.Status = (int)DeveloperStatus.Available;
-                newDev.CodeName = await GenerateUniqueCodeName();
-
-                await HandleLevel(requestBody.LevelId);
-                await HandleSkills(newDev, requestBody.Skills);
-                await HandleTypes(newDev, requestBody.Types);
-
-                newDev.User = newUser;
-
-                await _unitOfWork.DeveloperRepository.InsertAsync(newDev);
-                await _unitOfWork.SaveChangesAsync();
-                transaction.Commit();
-            }
-            catch (Exception)
-            {
-                transaction.Rollback();
-                throw;
-            }
-            var mappedNewDev = _mapper.Map<GetDevDTO>(newDev);
-            return mappedNewDev;
-        }
-
-        private async Task HandleLevel(int? levelId)
-        {
-            var isExistLevel = await _unitOfWork.LevelRepository.AnyAsync(l => l.LevelId == levelId);
-            if (!isExistLevel)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.LEVEL_FIELD, ErrorMessage.LEVEL_NOT_EXIST);
-        }
-
-        private async Task HandleSkills(Developer developer, IEnumerable<int> skillIds)
-        {
-            if (skillIds.Any())
-            {
-                var skills = _unitOfWork.SkillRepository.Get(s => skillIds.Contains(s.SkillId))
-                                                        .Where(t => t.Status == (int)SkillStatus.Active);
-                if(skills.Count() != skillIds.Count())
-                    throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SKILL_FIELD, ErrorMessage.SKILL_NOT_EXIST);
-
-                developer.DeveloperSkills = await skills
-                    .Where(skill => skill.Status == (int)SkillStatus.Active)
-                    .Select(skill => new DeveloperSkill
-                    {
-                        Skill = skill,
-                        Developer = developer
-                    }).ToListAsync();
-            }
-        }
-
-        private async Task HandleTypes(Developer developer, IEnumerable<int> typeIds)
-        {
-            if (typeIds.Any())
-            {
-                var types = _unitOfWork.TypeRepository.Get(t => typeIds.Contains(t.TypeId))
-                                                      .Where(t => t.Status == (int)TypeStatus.Active);
-                if (types.Count() != typeIds.Count())
-                    throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.TYPE_FIELD, ErrorMessage.TYPE_NOT_EXIST);
-
-                developer.DeveloperTypes = await types
-                    .Select(type => new DeveloperType
-                    {
-                        Type = type,
-                        Developer = developer
-                    }).ToListAsync();
-            }
-        }
-
-        public async Task<GetDevDTO> ActiveDeveloperAsync(int developerId)
-        {
-            var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(developerId);
-
-            if (dev == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
-
-            dev.Status = (int)DeveloperStatus.Available;
-            _unitOfWork.DeveloperRepository.Update(dev);
-            await _unitOfWork.SaveChangesAsync();
-
-            var mappedDev = _mapper.Map<GetDevDTO>(dev);
-            return mappedDev;
-        }
-
-        public async Task<int> GetTotalItemAsync()
-        {
-            var total = await _unitOfWork.DeveloperRepository.GetAll().CountAsync();
-            return total;
+            var mappedDevs = _mapper.Map<List<GetDeveloperInProject>>(devs);
+            return mappedDevs;
         }
 
         public async Task<List<GetMatchingDev>> GetDevMatchingWithRequest(int requestId)
@@ -252,9 +153,9 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                                       .ToList();
 
             var matchingDevs = new List<GetMatchingDev>();
-            var selectedDev = await _selectingDevService.GetSelectedDevsById(requestId);
-            var devsExpected = GetExceptDev(devs, selectedDev);
-            foreach (var dev in devsExpected)
+            //var selectedDev = await _selectingDevService.GetSelectedDevsById(requestId);
+            //var devsExpected = GetExceptDev(devs, selectedDev);
+            foreach (var dev in devs)
             {
                 var matchingPercentObj = _percentCalculateService.CalculateMatchingPercentage(request, dev);
                 var mappedDev = _mapper.Map<GetMatchingDev>(dev);
@@ -267,6 +168,187 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             return devTaken;
         }
 
+        public async Task<GetDevDTO> CreateDevAsync(CreateDevDTO requestBody)
+        {
+            var newUser = _mapper.Map<User>(requestBody);
+            var newDev = _mapper.Map<Developer>(requestBody);
+            using var transaction = _unitOfWork.BeginTransaction();
+            try
+            {
+                await IsExistPhoneNumber(requestBody.PhoneNumber);
+                await IsExistEmail(requestBody.Email);
+
+                newUser.Password = GenerateRandomPassword(12);
+                newUser.Status = (int)UserStatus.Active;
+                newUser.RoleId = (int)RoleEnum.Developer;
+
+                newDev.Status = (int)DeveloperStatus.Available;
+                newDev.CodeName = await GenerateUniqueCodeName();
+
+                await HandleLevel(requestBody.LevelId);
+                await HandleSkills(newDev, requestBody.Skills);
+                await HandleTypes(newDev, requestBody.Types);
+
+                newDev.User = newUser;
+
+                await _unitOfWork.DeveloperRepository.InsertAsync(newDev);
+                await _unitOfWork.SaveChangesAsync();
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+            var mappedNewDev = _mapper.Map<GetDevDTO>(newDev);
+            return mappedNewDev;
+        }
+
+        public async Task<GetDevDTO> UpdateDevProfileByAdminAsync(int developerId, UpdateDevByAdmin requestBody)
+        {
+            if (developerId != requestBody.DeveloperId)
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "developerId", "developerId not match with each other");
+            }
+
+            var user = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == developerId)
+                                                           .Include(d => d.User)
+                                                           .Select(d => d.User).SingleOrDefaultAsync();
+            var developer = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == developerId)
+                                                                 .Include(d => d.DeveloperSkills)
+                                                                 .Include(d => d.DeveloperTypes)
+                                                                 .SingleOrDefaultAsync();
+
+            var updatedUser = _mapper.Map(requestBody, user);
+            var updatedDev = _mapper.Map(requestBody, developer);
+
+            using var transaction = _unitOfWork.BeginTransaction();
+            try
+            {
+                await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
+                await IsExistEmailUpdate(user.Email, requestBody.Email);
+
+                updatedUser.Password = requestBody.Password;
+                if (requestBody.File != null)
+                    updatedUser.UserImage = await _fileService.UploadFileAsync(requestBody.File!, $"{user.FirstName}_{user.LastName}", ChildFolderName.AVATAR_FOLDER);
+
+                await HandleLevel(requestBody.LevelId);
+                await HandleSkills(updatedDev, requestBody.Skills);
+                await HandleTypes(updatedDev, requestBody.Types);
+
+                _unitOfWork.DeveloperRepository.Update(updatedDev);
+                _unitOfWork.UserRepository.Update(updatedUser);
+                await _unitOfWork.SaveChangesAsync();
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+            var mappedNewDev = _mapper.Map<GetDevDTO>(updatedDev);
+            return mappedNewDev;
+        }
+
+        public async Task<GetDevDTO> UpdateDevProfileAsync(int developerId, UpdateDevModel requestBody)
+        {
+            if (developerId != requestBody.DeveloperId)
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "developerId", "developerId not match with each other");
+            }
+            var user = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == developerId)
+                                                            .Include(d => d.User)
+                                                            .Select(d => d.User).SingleOrDefaultAsync();
+            var developer = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == developerId)                                                             
+                                                                 .SingleOrDefaultAsync();
+
+            var updatedUser = _mapper.Map(requestBody, user);
+            var updatedDev = _mapper.Map(requestBody, developer);
+
+            using var transaction = _unitOfWork.BeginTransaction();
+            try
+            {
+                await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
+                if (requestBody.File != null)
+                    updatedUser.UserImage = await _fileService.UploadFileAsync(requestBody.File!, $"{user.FirstName}_{user.LastName}", ChildFolderName.AVATAR_FOLDER);
+                _unitOfWork.DeveloperRepository.Update(updatedDev);
+                _unitOfWork.UserRepository.Update(updatedUser);
+                await _unitOfWork.SaveChangesAsync();
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+            var mappedNewDev = _mapper.Map<GetDevDTO>(updatedDev);
+            return mappedNewDev;
+        }
+
+        public async Task ChangStatusDeveloperAsync(ChangeStatusDeveloper requestBody)
+        {
+            var dev = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == requestBody.DeveloperId &&
+                                                                     d.Status == (int)DeveloperStatus.Available)
+                                                           .Include(d => d.User)
+                                                           .SingleOrDefaultAsync()
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
+
+            dev.User.Status = requestBody.UserStatus;
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        private async Task HandleLevel(int? levelId)
+        {
+            var isExistLevel = await _unitOfWork.LevelRepository.AnyAsync(l => l.LevelId == levelId && l.Status == (int)LevelStatus.Active);
+            if (!isExistLevel)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.LEVEL_FIELD, ErrorMessage.LEVEL_NOT_EXIST);
+        }
+
+        private async Task HandleSkills(Developer developer, IEnumerable<int> skillIds)
+        {
+            var skills = _unitOfWork.SkillRepository.Get(s => skillIds.Contains(s.SkillId))
+                                                    .Where(t => t.Status == (int)SkillStatus.Active);
+
+            if (skills.Count() != skillIds.Count())
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "skillId", "skillId count not match!");
+
+            developer.DeveloperSkills.Clear();
+
+            developer.DeveloperSkills = await skills
+                .Where(skill => skill.Status == (int)SkillStatus.Active)
+                .Select(skill => new DeveloperSkill
+                {
+                    Skill = skill,
+                    Developer = developer
+                }).ToListAsync();
+        }
+
+        private async Task HandleTypes(Developer developer, IEnumerable<int> typeIds)
+        {
+            var types = _unitOfWork.TypeRepository.Get(t => typeIds.Contains(t.TypeId))
+                                                  .Where(t => t.Status == (int)TypeStatus.Active);
+
+            if (types.Count() != typeIds.Count())
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "typeId", "typeId count not match!");
+
+            developer.DeveloperTypes.Clear();
+
+            developer.DeveloperTypes = await types
+                .Where(type => type.Status == (int)TypeStatus.Active)
+                .Select(type => new DeveloperType
+                {
+                    Type = type,
+                    Developer = developer
+                }).ToListAsync();
+        }
+
+        public async Task<int> GetTotalItemAsync()
+        {
+            var total = await _unitOfWork.DeveloperRepository.GetAll().CountAsync();
+            return total;
+        }      
+
+
         public List<Developer> GetExceptDev(List<Developer> devs1, List<Developer> devs2)
         {
             var resultDevs = devs1
@@ -275,7 +357,6 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
 
             return resultDevs;
         }
-
 
         public static string GenerateRandomPassword(int length)
         {
@@ -303,6 +384,20 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
         }
 
+        private async Task IsExistPhoneNumberUpdate(string? oldPhoneNumber, string newPhoneNumber)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.PhoneNumber.Equals(newPhoneNumber) && oldPhoneNumber != newPhoneNumber);
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
+        }
+
+        private async Task IsExistEmailUpdate(string oldEmail, string newEmail)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.Email.Equals(newEmail) && !oldEmail.Equals(newEmail));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
+        }
+
         private async Task<string> GenerateUniqueCodeName()
         {
             Random random = new Random();
@@ -317,44 +412,6 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             return codeName;
         }
 
-        public Task<GetDevDTO> UpdateDevProfileAsync(int id, UpdateDevProfile requestBody)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<GetAllFieldDev> GetDevsWaitingInterview(PagingQuery query, int requestId)
-        {
-            var devs = _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
-                                                                  s.Status == (int)SelectedDevStatus.WaitingInterview)
-                                                        .Include(r => r.Developer.EmploymentType)
-                                                        .Include(r => r.Developer.ScheduleType)
-                                                        .Include(s => s.Developer.Level)
-                                                        .Include(s => s.Developer.DeveloperTypes)
-                                                            .ThenInclude(dt => dt.Type)
-                                                        .Include(s => s.Developer.DeveloperSkills)
-                                                            .ThenInclude(ds => ds.Skill)
-                                                        .Select(s => s.Developer);
-
-            devs = devs.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
-            var mappedDevs = _mapper.Map<List<GetAllFieldDev>>(devs);        
-            return mappedDevs;
-        }
-
-        public async Task<int> GetTotalDevWaitingInterviewAsync(int requestId)
-        {
-            var total = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestId &&
-                                                                 s.Status == (int)SelectedDevStatus.WaitingInterview)
-                                                               .CountAsync();
-            return total;
-        }
-
-        public async Task<int> GetTotalUnofficialAsync()
-        {
-            var total = await _unitOfWork.DeveloperRepository.Get(d => d.Status == (int)DeveloperStatus.Available &&
-                                                                         d.User.RoleId == (int)RoleEnum.Unofficial && d.User.Status == (int)UserStatus.Active)
-                                                               .Include(d => d.User).CountAsync();
-            return total;
-        }
+        
     }
 }

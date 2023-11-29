@@ -9,19 +9,20 @@ namespace WeHire.Domain.Entities
     {
         public HiredDeveloper()
         {
-            Contracts = new HashSet<Contract>();
-            WorkLogs = new HashSet<WorkLog>();
+            PaySlips = new HashSet<PaySlip>();
         }
 
         public int HiredDeveloperId { get; set; }
-        public decimal? Salary { get; set; }
         public int Status { get; set; }
+        public int? JobPositionId { get; set; }
         public int? ProjectId { get; set; }
+        public int? ContractId { get; set; }
         public int? DeveloperId { get; set; }
 
+        public virtual Contract Contract { get; set; }
         public virtual Developer Developer { get; set; }
+        public virtual JobPosition JobPosition { get; set; }
         public virtual Project Project { get; set; }
-        public virtual ICollection<Contract> Contracts { get; set; }
-        public virtual ICollection<WorkLog> WorkLogs { get; set; }
+        public virtual ICollection<PaySlip> PaySlips { get; set; }
     }
 }

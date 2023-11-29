@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.User;
 using WeHire.Application.Utilities.GlobalVariables;
+using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Infrastructure.Services.UserServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
@@ -22,31 +23,13 @@ namespace WeHire.API.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetUserDetail>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllUserAsync([FromQuery] PagingQuery query, 
+        public async Task<IActionResult> GetAllUserAsync([FromQuery] int roleId,
+                                                         [FromQuery] PagingQuery query, 
                                                          [FromQuery] SearchUserDTO searchKey)
         {
-            var result = _userService.GetAllUser(query, searchKey);
-            var total = await _userService.GetTotalItemAsync();
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total,
-            };
-            return Ok(new PagedApiResponse<GetUserDetail>()
-            {
-                Code = StatusCodes.Status200OK,
-                Paging = paging,
-                Data = result
-            });
-        }
-
-        [HttpGet("Staff")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetUserDetail>>), StatusCodes.Status200OK)]
-        public IActionResult GetAllStaff([FromQuery] PagingQuery query)
-        {
-            var result = _userService.GetStaff(query);
-            var total = result.Count;
+            var result = _userService.GetAllUser(roleId, query, searchKey);
+            var total = searchKey.AreAllPropertiesNull() ? await _userService.GetTotalItemAsync()
+                                                         : result.Count;
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,
@@ -101,6 +84,19 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpPut("ByAdmin/{id}")]
+        [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateUserByAdminAsync(int id, [FromForm] UpdateUserAdminDTO requestBody)
+        {
+            var result = await _userService.UpdateUserByAdminAsync(id, requestBody);
+
+            return Ok(new ApiResponse<GetUserDetail>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpPut("UpdatePassword/{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePasswordAsync(int id, UpdatePassword requestBody)
@@ -127,17 +123,17 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpDelete("ChangeStatus/{userId}")]
-        [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeStatusAsync(int userId)
-        {
-            var result = await _userService.ChangeStatusAsync(userId);
+        //[HttpDelete("ChangeStatus/{userId}")]
+        //[ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> ChangeStatusAsync(int userId)
+        //{
+        //    var result = await _userService.ChangeStatusAsync(userId);
 
-            return Ok(new ApiResponse<GetUserDetail>()
-            {
-                Code = StatusCodes.Status200OK,
-                Data = result
-            });
-        }
+        //    return Ok(new ApiResponse<GetUserDetail>()
+        //    {
+        //        Code = StatusCodes.Status200OK,
+        //        Data = result
+        //    });
+        //}
     }
 }

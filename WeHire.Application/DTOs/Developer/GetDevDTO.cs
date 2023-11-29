@@ -14,10 +14,8 @@ namespace WeHire.Application.DTOs.Developer
         public string CodeName { get; set; }
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }
-        public int? ScheduleTypeId { get; set; }
         public int? EmploymentTypeId { get; set; }
         public int? LevelId { get; set; }
         public string? DevStatusString { get; set; }
-        public int? Cvid { get; set; }
     }
 }

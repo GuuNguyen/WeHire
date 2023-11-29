@@ -7,7 +7,7 @@ using WeHire.Application.DTOs.File;
 
 namespace WeHire.Application.DTOs.Project
 {
-    public class UpdateProjectDTO : FileDTO
+    public class UpdateProjectDTO 
     {
         public int ProjectId { get; set; }
         public int? ProjectTypeId { get; set; }

@@ -19,8 +19,8 @@ namespace WeHire.Application.DTOs.Developer
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }
         public string? DevStatusString { get; set; }
+        public string UserStatus { get; set; }
         public string? RoleString { get; set; }
-        public string ScheduleTypeName { get; set; }
         public string EmploymentTypeName { get; set; }
         public string LevelRequireName { get; set; }
         public List<string> TypeRequireStrings { get; set; }

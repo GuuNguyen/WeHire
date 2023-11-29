@@ -49,7 +49,6 @@ namespace WeHire.API.Controllers
             });
         }
 
-
         [HttpPost("Refresh")]
         [ProducesResponseType(typeof(ApiResponse<RefreshTokenModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RefreshAsync(RefreshTokenModel requestBody)
@@ -68,7 +67,7 @@ namespace WeHire.API.Controllers
         public async Task<RedirectResult> ConfirmEmailAsync([FromQuery]ConfirmEmailDTO requestBody)
         {
             await _accountService.ConfirmEmailAsync(requestBody);
-            return RedirectPermanent("http://localhost:3000/signin");
+            return RedirectPermanent("https://frontend-hiring-dev.vercel.app/signin");
         }
 
         [HttpDelete("Revoke")]

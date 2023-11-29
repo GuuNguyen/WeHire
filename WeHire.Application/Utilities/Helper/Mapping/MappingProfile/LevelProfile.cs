@@ -18,7 +18,9 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<Level, GetLevelDetail>()
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => Enum.GetName(typeof(LevelStatus), src.Status)))
                 .ReverseMap();
+            CreateMap<Level, GetLevelDeveloper>().ReverseMap();
             CreateMap<Level, CreateLevelDTO>().ReverseMap();
+            CreateMap<Level, UpdateLevelModel>().ReverseMap();
         }
     }
 }

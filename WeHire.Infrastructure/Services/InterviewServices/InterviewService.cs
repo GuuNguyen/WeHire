@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Google.Apis.Util;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -42,9 +43,9 @@ namespace WeHire.Infrastructure.Services.InterviewServices
         {
             var interviews = _unitOfWork.InterviewRepository.Get()
                                                             .Include(i => i.Request)
-                                                                .ThenInclude(r => r.Project)
+                                                            .ThenInclude(i => i.Company)
                                                             .AsQueryable();
-            if (companyId.HasValue) interviews.Where(i => i.Request.Project.CompanyId == companyId.Value);
+            if (companyId.HasValue) interviews.Where(i => i.Request.CompanyId == companyId.Value);
 
             interviews = interviews.SearchItems(searchKey);
             interviews = interviews.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
@@ -55,10 +56,9 @@ namespace WeHire.Infrastructure.Services.InterviewServices
         public List<GetListInterview> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey)
         {
             if (!companyId.HasValue) return new();
-            var interviews = _unitOfWork.InterviewRepository.Get(i => i.Request.Project.CompanyId == companyId)
-                                                            .Include(i => i.Request)
-                                                                 .ThenInclude(r => r.Project)
-                                                            .AsQueryable();
+            var interviews = _unitOfWork.InterviewRepository.Get(i => i.Request.CompanyId == companyId)
+                                                           .Include(i => i.Request)
+                                                           .AsQueryable();
 
             if (requestId.HasValue) interviews = interviews.Where(i => i.RequestId == requestId);
 
@@ -75,6 +75,10 @@ namespace WeHire.Infrastructure.Services.InterviewServices
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
 
             var dev = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == interview.DeveloperId)
+                                                           .Include(d => d.User)
+                                                           .Include(d => d.Gender)
+                                                           .Include(d => d.Level)
+                                                           .Include(d => d.EmploymentType)
                                                            .Include(d => d.DeveloperSkills)
                                                                 .ThenInclude(ds => ds.Skill)
                                                            .Include(d => d.DeveloperTypes)
@@ -118,6 +122,7 @@ namespace WeHire.Infrastructure.Services.InterviewServices
                 newInterview.Status = (int)InterviewStatus.WaitingDevApproval;
                 newInterview.CreatedAt = DateTime.Now;
                 newInterview.NumOfInterviewee = 1;
+                newInterview.EventId = Guid.NewGuid().ToString();
                 await HandleSelectedDevToInterviewing(requestBody.RequestId, requestBody.DeveloperId);
                 await _unitOfWork.InterviewRepository.InsertAsync(newInterview);
                 await _unitOfWork.SaveChangesAsync();
@@ -135,6 +140,49 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             return mappedInterview;
         }
 
+        public async Task<GetInterviewDTO> UpdateInterviewAsync(int interviewId, UpdateInterviewModel requestBody)
+        {
+            if(interviewId != requestBody.InterviewId)
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "InterviewId", "interviewId not match with each other!!");
+            }
+            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId && 
+                                                                           i.Status == (int)InterviewStatus.WaitingDevApproval)
+                                                                 .SingleOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+
+            var updatedInterview = _mapper.Map(requestBody, interview);
+            _unitOfWork.InterviewRepository.Update(updatedInterview);
+            await _unitOfWork.SaveChangesAsync();
+
+            var mappedInterview = _mapper.Map<GetInterviewDTO>(updatedInterview);
+            return mappedInterview;
+        }
+
+        public async Task<GetInterviewDTO> CancelInterviewAsync(int interviewId)
+        {
+            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId &&
+                                                                          (i.Status == (int)InterviewStatus.WaitingDevApproval ||
+                                                                           i.Status == (int)InterviewStatus.Approved))
+                                                                 .SingleOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+            
+            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId &&
+                                                                               s.RequestId == interview.RequestId)
+                                                                     .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
+
+            interview.Status = (int)InterviewStatus.Cancelled;
+            interview.MeetingUrl = null;
+            interview.OutlookUrl = null;
+            selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
+
+            await _unitOfWork.SaveChangesAsync();
+
+            var mappedInterview = _mapper.Map<GetInterviewDTO>(interview);
+            return mappedInterview;
+        }
+
         private async Task HandleSelectedDevToInterviewing(int requestId, int developerId)
         {
             var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == developerId && s.RequestId == requestId)
@@ -144,6 +192,7 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             selectedDev.Status = (int)SelectedDevStatus.InterviewScheduled;
             _unitOfWork.SelectedDevRepository.Update(selectedDev);
         }
+       
 
         public async Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody)
         {
@@ -154,7 +203,8 @@ namespace WeHire.Infrastructure.Services.InterviewServices
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
             var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId
                                                                             && s.RequestId == interview.RequestId)
-                                                                     .SingleOrDefaultAsync();
+                                                                     .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
@@ -182,15 +232,43 @@ namespace WeHire.Infrastructure.Services.InterviewServices
 
             return _mapper.Map<GetInterviewDTO>(interview);
         }
+       
 
+        public async Task<GetInterviewDTO> FinishInterviewAsync(int interviewId)
+        {
+            var interview = await _unitOfWork.InterviewRepository.GetByIdAsync(interviewId)
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
+            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId
+                                                                            && s.RequestId == interview.RequestId)
+                                                                     .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
+            DateTime interviewDate = interview.DateOfInterview!.Value.Date;
+
+            TimeSpan endTime = interview.EndTime!.Value;
+
+            DateTime combinedDateTime = interviewDate.Add(endTime);
+
+            DateTime currentDateTime = DateTime.Now;
+
+            if (combinedDateTime < currentDateTime)
+            {
+                interview.Status = (int)InterviewStatus.Completed;
+                selectedDev.Status = (int)SelectedDevStatus.WaitingInterview;
+                await _unitOfWork.SaveChangesAsync();
+            }
+            else
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "EndTime", "The interview must be out of time before it can finished");
+            }
+            var mappedInterview = _mapper.Map<GetInterviewDTO>(interview);
+            return mappedInterview;
+        }
         public async Task<int> GetTotalInterviewsAsync(int? companyId = null)
         {
-            IQueryable<Interview> interviewQuery = _unitOfWork.InterviewRepository.Get()
-                                                                                  .Include(i => i.Request)
-                                                                                        .ThenInclude(r => r.Project);
+            IQueryable<Interview> interviewQuery = _unitOfWork.InterviewRepository.Get().Include(i => i.Request);
             if (companyId.HasValue)
             {
-                interviewQuery = interviewQuery.Where(i => i.Request.Project.CompanyId == companyId.Value);
+                interviewQuery = interviewQuery.Where(i => i.Request.CompanyId == companyId.Value);
             }
 
             var total = await interviewQuery.CountAsync();
@@ -211,6 +289,33 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             } while (isExistInterviewCode);
 
             return codeName;
+        }
+
+        public async Task ExpireInterviewAsync(DateTime currentTime)
+        {
+            var interviews = await _unitOfWork.InterviewRepository.Get()
+                    .Where(i => i.DateOfInterview.HasValue && i.StartTime.HasValue && i.Status == (int)InterviewStatus.WaitingDevApproval)
+                    .ToListAsync();
+
+            var filteredInterviews = interviews
+                .Where(i => i.DateOfInterview.Value.Date + i.StartTime.Value < currentTime)
+                .ToList();
+
+            if (filteredInterviews.Any())
+            {
+                foreach (var interview in filteredInterviews)
+                {
+                    var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId &&
+                                                                                      s.RequestId == interview.RequestId)
+                                                                                     .SingleOrDefaultAsync();
+                    interview.Status = (int)InterviewStatus.Rejected;
+                    interview.RejectionReason = $"WeHire: This developer has not responded to the interview request, please create a new interview.";
+                    interview.MeetingUrl = null;
+                    interview.OutlookUrl = null;
+                    selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
+                    await _unitOfWork.SaveChangesAsync();
+                }
+            }
         }
     }
 }

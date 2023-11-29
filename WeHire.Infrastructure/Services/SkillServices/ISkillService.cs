@@ -14,6 +14,8 @@ namespace WeHire.Infrastructure.Services.SkillServices
     {
         public List<GetSkillDetail> GetAllSkill(PagingQuery query, SearchSkillDTO searchKey);
         public Task<GetSkillDetail> CreateSkillAsync(CreateSkillDTO requestBody);
+        public Task UpdateSkillAsync(UpdateSkillModel requestBody);
+        public Task DeleteSkillAsync(int skillId);
         public Task<int> GetTotalItemAsync();
     }
 }

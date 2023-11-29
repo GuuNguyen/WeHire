@@ -13,6 +13,7 @@ using WeHire.Application.Utilities.Helper.Searching;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
+using static WeHire.Domain.Enums.TypeEnum;
 
 namespace WeHire.Infrastructure.Services.TypeServices
 {
@@ -57,6 +58,23 @@ namespace WeHire.Infrastructure.Services.TypeServices
         {
             var total = await _unitOfWork.TypeRepository.GetAll().AsNoTracking().CountAsync();
             return total;
+        }
+
+        public async Task UpdateTypeAsync(UpdateTypeModel requestBody)
+        {
+            var type = await _unitOfWork.TypeRepository.GetByIdAsync(requestBody.TypeId)
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.TYPE_FIELD, ErrorMessage.TYPE_NOT_EXIST);
+            var updatedType = _mapper.Map(requestBody, type);
+            _unitOfWork.TypeRepository.Update(updatedType);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task DeleteTypeAsync(int typeId)
+        {
+            var type = await _unitOfWork.TypeRepository.GetByIdAsync(typeId)
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.TYPE_FIELD, ErrorMessage.TYPE_NOT_EXIST);
+            type.Status = (int)TypeStatus.Inactive;
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

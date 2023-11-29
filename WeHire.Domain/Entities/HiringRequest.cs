@@ -23,18 +23,21 @@ namespace WeHire.Domain.Entities
         public decimal? SalaryPerDev { get; set; }
         public DateTime? Duration { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public DateTime? ExpiredAt { get; set; }
+        public bool? IsExpiredOnce { get; set; }
         public string RejectionReason { get; set; }
         public int Status { get; set; }
-        public int? ProjectId { get; set; }
+        public int? CompanyId { get; set; }
+        public int? JobPositionId { get; set; }
         public int? TypeRequireId { get; set; }
         public int? LevelRequireId { get; set; }
-        public int? ScheduleTypeId { get; set; }
         public int? EmploymentTypeId { get; set; }
 
+        public virtual CompanyPartner Company { get; set; }
         public virtual EmploymentType EmploymentType { get; set; }
+        public virtual JobPosition JobPosition { get; set; }
         public virtual Level LevelRequire { get; set; }
-        public virtual Project Project { get; set; }
-        public virtual ScheduleType ScheduleType { get; set; }
         public virtual Type TypeRequire { get; set; }
         public virtual ICollection<Interview> Interviews { get; set; }
         public virtual ICollection<SelectedDev> SelectedDevs { get; set; }
