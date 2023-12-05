@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using WeHire.Application.DTOs.HiringRequest;
 using WeHire.Application.Utilities.Helper.EnumToList;
 using WeHire.Application.Utilities.Helper.Pagination;
+using WeHire.Domain.Entities;
 
 namespace WeHire.Infrastructure.Services.HiringRequestServices
 {
@@ -16,14 +17,14 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         public Task<GetRequestDTO> CreateRequestAsync(CreateRequestDTO requestBody);
         public Task<GetRequestDTO> UpdateRequestAsync(int requestId, UpdateRequestDTO requestBody);
         public Task<GetRequestDTO> CloneARequestAsync(int requestId);
-        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status);
-        public Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
-        public Task<List<GetAllFieldRequest>> GetExpiredRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
-        public Task<List<GetAllFieldRequest>> GetRequestsByProjectId(int projectId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
+        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status, string? searchKeyString, SearchHiringRequestDTO searchKey);
+        public Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId, PagingQuery query, string? searchKeyString, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
+        public Task<List<GetAllFieldRequest>> GetRequestsByProjectId(int projectId, PagingQuery query, string? searchKeyString, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
+        public Task HandleDeveloperAfterCloseHiringRequest(HiringRequest request);
         public Task<int> GetTotalRequestsAsync(int? companyId = null);
-        public Task<int> GetTotalExpiredRequestsAsync(int companyId);
-        public Task<int> GetTotalRequestsByProjectIdAsync(int projectId);
         public Task CheckRequestDeadline(DateTime currentTime);
+        public Task CheckRequestExpired(DateTime currentTime);
+        public Task<int> GetTotalRequestsByProjectIdAsync(int projectId);
         public List<EnumDetailDTO> GetRequestStatus();
         public Task<string> DeleteHiringRequest(int requestId);
     }

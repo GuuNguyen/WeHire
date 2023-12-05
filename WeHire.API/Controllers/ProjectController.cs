@@ -22,10 +22,11 @@ namespace WeHire.API.Controllers
 
         [HttpGet()]
         [ProducesResponseType(typeof(PagedApiResponse<GetListProjectDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetListProjectAsync([FromQuery] PagingQuery query, [FromQuery] SearchProjectDTO searchKey)
+        public async Task<IActionResult> GetListProjectAsync([FromQuery] PagingQuery query,
+                                      [FromQuery] string? searchKeyString, [FromQuery] SearchProjectDTO searchKey)
         {
-            var result = _projectService.GetAllProject(query, searchKey);
-            var total = searchKey.AreAllPropertiesNull() ? await _projectService.GetTotalProjectAsync()
+            var result = _projectService.GetAllProject(query, searchKeyString, searchKey);
+            var total = searchKey.AreAllPropertiesNull() && searchKeyString == null ? await _projectService.GetTotalProjectAsync()
                                                          : result.Count;
             var paging = new PaginationInfo
             {
@@ -45,11 +46,12 @@ namespace WeHire.API.Controllers
         [ProducesResponseType(typeof(PagedApiResponse<GetListProjectDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListProjectAsync(int companyId, 
                                                             [FromQuery] PagingQuery query,
+                                                            [FromQuery] string? searchKeyString,
                                                             [FromQuery] SearchProjectDTO searchKey)
         {
-            var result = _projectService.GetAllProjectByCompanyId(companyId, query, searchKey);
-            var total = searchKey.AreAllPropertiesNull() ? await _projectService.GetTotalProjectAsync(companyId)
-                                                         : result.Count;
+            var result = _projectService.GetAllProjectByCompanyId(companyId, query, searchKeyString, searchKey);
+            var total = searchKey.AreAllPropertiesNull() && searchKeyString == null ? await _projectService.GetTotalProjectAsync(companyId)
+                                                                                    : result.Count;
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,
@@ -66,9 +68,9 @@ namespace WeHire.API.Controllers
 
         [HttpGet("Developer/{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetListProjectDTO>>), StatusCodes.Status200OK)]
-        public  IActionResult GetProjectByDeveloperIdt(int developerId, [FromQuery] int devStatusInProject, [FromQuery] SearchProjectDTO searchKey)
+        public  IActionResult GetProjectByDeveloperIdt(int developerId, [FromQuery] string? searchKeyString, [FromQuery] int devStatusInProject, [FromQuery] SearchProjectDTO searchKey)
         {
-            var result = _projectService.GetProjectByDevId(developerId, devStatusInProject, searchKey);
+            var result = _projectService.GetProjectByDevId(developerId, devStatusInProject, searchKeyString, searchKey);
             return Ok(new ApiResponse<List<GetListProjectDTO>>()
             {
                 Code = StatusCodes.Status200OK,

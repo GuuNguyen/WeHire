@@ -29,14 +29,20 @@ namespace WeHire.Infrastructure.Services.TransactionServices
             _mapper = mapper;
         }
 
+
         public List<GetTransactionDTO> GetTransactions(PagingQuery query, SearchTransactionDTO searchKey)
         {
-            IQueryable<Transaction> transactions = _unitOfWork.TransactionRepository.GetAll().OrderByDescending(t => t.Timestamp);
+            IQueryable<Transaction> transactions = _unitOfWork.TransactionRepository.GetAll()
+                                                              .Include(t => t.PayPeriod)
+                                                              .Include(t => t.PayPeriod.Project)
+                                                              .Include(t => t.PayPeriod.Project.Company)
+                                                              .OrderByDescending(t => t.Timestamp);
             transactions = transactions.SearchItems(searchKey);
             transactions = transactions.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
             var mappedTransaction = _mapper.Map<List<GetTransactionDTO>>(transactions);
             return mappedTransaction;
         }
+
 
         public async Task<List<GetTransactionDTO>> GetTransactionsByCompanyIdAsync(int companyId, PagingQuery query, SearchTransactionDTO searchKey)
         {
@@ -44,14 +50,17 @@ namespace WeHire.Infrastructure.Services.TransactionServices
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
             var transactions = _unitOfWork.TransactionRepository.Get(t => t.Payer.CompanyPartners.FirstOrDefault().CompanyId == companyId)
-                                                                      .OrderByDescending(t => t.Timestamp)
-                                                                      .AsQueryable();
+                                                                .Include(t => t.PayPeriod)
+                                                                .Include(t => t.PayPeriod.Project)
+                                                                .OrderByDescending(t => t.Timestamp)
+                                                                .AsQueryable();
             transactions = transactions.SearchItems(searchKey);
             transactions = transactions.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedTransaction = _mapper.Map<List<GetTransactionDTO>>(transactions);
             return mappedTransaction;
         }
+
 
         public async Task CreateTransactionAsync(Transaction requestBody)
         {
@@ -61,6 +70,7 @@ namespace WeHire.Infrastructure.Services.TransactionServices
             await _unitOfWork.TransactionRepository.InsertAsync(requestBody);    
             await _unitOfWork.SaveChangesAsync();
         }
+
 
         public async Task<int> GetTotalItemAsync(int? companyId = null)
         {

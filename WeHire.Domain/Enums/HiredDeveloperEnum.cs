@@ -11,20 +11,35 @@ namespace WeHire.Domain.Enums
     {
         public enum HiredDeveloperStatus
         {
+            [Description("Under Consideration")]
+            UnderConsideration = 1,
+
+            [Description("Waiting Interview")]
+            WaitingInterview = 2,
+
+            [Description("Interview Scheduled")]
+            InterviewScheduled = 3,
+
+            [Description("Rejected")]
+            Rejected = 4,
+
             [Description("Contract Processing")]
-            ContractProcessing = 1,
+            ContractProcessing = 5,
+
+            [Description("Contract Failed")]
+            ContractFailed = 6,
+
+            [Description("Request Closed")]
+            RequestClosed = 7,
 
             [Description("Working")]
-            Working = 2,
+            Working = 8,
 
             [Description("Terminated")]
-            Terminated = 3,
+            Terminated = 9,
 
             [Description("Completed")]
-            Completed = 4,
-
-            [Description("Contract Fail")]
-            ContractFailed = 5,
+            Completed = 10,
         }
     }
 }

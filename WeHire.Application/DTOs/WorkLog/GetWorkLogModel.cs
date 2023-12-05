@@ -14,5 +14,6 @@ namespace WeHire.Application.DTOs.WorkLog
         public TimeSpan? TimeIn { get; set; }
         public TimeSpan? TimeOut { get; set; }
         public decimal HourWorkInDay { get; set; }
+        public bool? IsPaidLeave { get; set; }
     }
 }

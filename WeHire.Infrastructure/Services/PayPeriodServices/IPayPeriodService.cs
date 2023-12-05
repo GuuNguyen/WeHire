@@ -13,7 +13,7 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
         public DurationInMonth GetPayPeriodDuration(DateTime? startProjectDate, DateTime? endProjectDate, DateTime dateInput);
         public Task<ExcelFileModel> GeneratePayPeriodExcelFile(int projectId, DateTime inputDate);
         public Task<GetPayPeriodBill> GetPayPeriodByProject(int projectId, DateTime inputDate);
-        public Task InsertPayPeriodFromExcel(int projectId, ImportPaySlipModel importPaySlipModel);
+        public Task<string> InsertPayPeriodFromExcel(int projectId, ImportPaySlipModel importPaySlipModel);
         public Task<GetPayPeriodModel> CreatePayPeriod(CreatePayPeriodModel requestBody);
         public decimal? GetTotalEarningByDeveloperCode(int? hiredDeveloperId, decimal? totalActualWorkedHours, decimal? overtimeHours);
     }

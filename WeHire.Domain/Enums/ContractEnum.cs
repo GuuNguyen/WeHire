@@ -16,7 +16,9 @@ namespace WeHire.Domain.Enums
             [Description("Signed")]
             Signed = 2,
             [Description("Failed")]
-            Failed = 3
+            Failed = 3,
+            [Description("Terminated")]
+            Terminated = 4
         }
     }
 }

@@ -10,7 +10,6 @@ using WeHire.Application.Utilities.Helper.EnumDescription;
 using WeHire.Application.Utilities.Helper.PostedTime;
 using WeHire.Domain.Entities;
 using static WeHire.Domain.Enums.InterviewEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
 
 namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
 {

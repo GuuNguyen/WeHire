@@ -23,7 +23,6 @@ namespace WeHire.Application.Utilities.Helper.Mapping
                 mc.AddProfile(new CompanyProfile());
                 mc.AddProfile(new HiringRequestProfile());
                 mc.AddProfile(new RoleProfile());
-                mc.AddProfile(new SelectingDevProfile());
                 mc.AddProfile(new GenderProfile());
                 mc.AddProfile(new EmploymentTypeProfile());
                 mc.AddProfile(new TransactionProfile());
@@ -35,10 +34,12 @@ namespace WeHire.Application.Utilities.Helper.Mapping
                 mc.AddProfile(new ProjectProfile());
                 mc.AddProfile(new ProjectTypeProfile());
                 mc.AddProfile(new ContractProfile());
-                mc.AddProfile(new JobPositionProfile());
                 mc.AddProfile(new PayPeriodProfile());
                 mc.AddProfile(new PaySlipProfile());
                 mc.AddProfile(new WorkLogProfile());
+                mc.AddProfile(new HiredDeveloperProfile());
+                mc.AddProfile(new ReportProfile());
+                mc.AddProfile(new ReportTypeProfile());
             });
 
             IMapper mapper = mappingConfig.CreateMapper();

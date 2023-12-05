@@ -21,6 +21,7 @@ namespace WeHire.Infrastructure.BackgroundJob.HiringRequest
         public async Task Execute(IJobExecutionContext context)
         {
             await _hiringRequestService.CheckRequestDeadline(DateTime.Now);
+            await _hiringRequestService.CheckRequestExpired(DateTime.Now);
         }
     }
 }

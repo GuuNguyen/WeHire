@@ -12,9 +12,9 @@ namespace WeHire.Infrastructure.Services.ProjectServices
 {
     public interface IProjectService
     {
-        public List<GetListProjectDTO> GetAllProject(PagingQuery query, SearchProjectDTO searchKey);
-        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, SearchProjectDTO searchKey);
-        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, PagingQuery query, SearchProjectDTO searchKey);
+        public List<GetListProjectDTO> GetAllProject(PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey);
+        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, string? searchKeyString, SearchProjectDTO searchKey);
+        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey);
         public Task<GetProjectDetail> GetProjectById(int projectId);
         public Task<GetProjectDTO> CreateProjectAsync(CreateProjectDTO requestBody);
         public Task<GetProjectDTO> UpdateProjectAsync(int projectId, UpdateProjectDTO requestBody);

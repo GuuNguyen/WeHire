@@ -36,12 +36,14 @@ namespace WeHire.Infrastructure.Services.ProjectServices
             _fileService = fileService;
         }
 
-        public List<GetListProjectDTO> GetAllProject(PagingQuery query, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetAllProject(PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey)
         {
             IQueryable<Project> projects = _unitOfWork.ProjectRepository.GetAll()
                                                         .Include(p => p.Company)
                                                         .Include(p => p.ProjectType)
                                                         .OrderByDescending(n => n.CreatedAt);
+
+            projects = SearchProjectByString(projects, searchKeyString);
             projects = projects.SearchItems(searchKey);
             projects = projects.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
@@ -49,17 +51,25 @@ namespace WeHire.Infrastructure.Services.ProjectServices
             return mappedProjects;
         }
 
-        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, PagingQuery query, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey)
         {
             IQueryable<Project> projects = _unitOfWork.ProjectRepository.Get(p => p.CompanyId == companyId)
                                                       .Include(p => p.Company)
                                                       .Include(p => p.ProjectType)
                                                       .OrderByDescending(n => n.CreatedAt);
+            
+            projects = SearchProjectByString(projects, searchKeyString);
             projects = projects.SearchItems(searchKey);
             projects = projects.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
-            var mappedProjects = _mapper.Map<List<GetListProjectDTO>>(projects);
+            var mappedProjects = _mapper.Map<List<GetListProjectDTO>>(projects.ToList());
             return mappedProjects;
+        }
+        private IQueryable<Project> SearchProjectByString(IQueryable<Project> query, string? searchKeyString)
+        {
+            if(searchKeyString != null)
+                return query = query.Where(p => p.ProjectCode.Contains(searchKeyString) || p.ProjectName.Contains(searchKeyString));
+            return query;
         }
 
         public async Task<GetProjectDetail> GetProjectById(int projectId)
@@ -82,7 +92,7 @@ namespace WeHire.Infrastructure.Services.ProjectServices
             return mappedProject;
         }
 
-        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, string? searchKeyString, SearchProjectDTO searchKey)
         {
             var projects = _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == devId &&
                                                                          h.Status == devStatusInProject).AsNoTracking()
@@ -91,6 +101,8 @@ namespace WeHire.Infrastructure.Services.ProjectServices
                                                               .Include(h => h.Project.Company)
                                                               .Select(h => h.Project)
                                                               .AsQueryable();
+
+            projects = SearchProjectByString(projects, searchKeyString);
             projects = projects.SearchItems(searchKey);
 
             var mappedProject = _mapper.Map<List<GetListProjectDTO>>(projects);
@@ -124,7 +136,7 @@ namespace WeHire.Infrastructure.Services.ProjectServices
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_MATCH);
 
             var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId && 
-                                                                       p.Status == (int)ProjectStatus.Preparing)
+                                                                       p.Status != (int)ProjectStatus.Closed)
                                                              .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
@@ -150,12 +162,13 @@ namespace WeHire.Infrastructure.Services.ProjectServices
 
         public async Task<int> GetTotalProjectAsync(int? companyId = null)
         {
+            var total = 0;
             var query = _unitOfWork.ProjectRepository.GetAll();
 
             if (companyId.HasValue)
-                query.Where(p => p.CompanyId == companyId);
+               return total = await query.Where(p => p.CompanyId == companyId).CountAsync();
 
-            return await query.CountAsync();
+            return total = await query.CountAsync();
         }
 
         private async Task<string> GenerateUniqueCodeName()

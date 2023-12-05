@@ -166,7 +166,7 @@ namespace WeHire.Infrastructure.Services.AccountServices
                                                        .FirstOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
             user.Status = (int)UserStatus.Active;
-            user.RefreshToken = null;
+            user.ConfirmationCode = null;
             await _unitOfWork.SaveChangesAsync();
         }
     }

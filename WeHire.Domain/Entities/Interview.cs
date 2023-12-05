@@ -21,10 +21,10 @@ namespace WeHire.Domain.Entities
         public string RejectionReason { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int Status { get; set; }
-        public int? DeveloperId { get; set; }
+        public int? HiredDeveloperId { get; set; }
         public int? RequestId { get; set; }
 
-        public virtual Developer Developer { get; set; }
+        public virtual HiredDeveloper HiredDeveloper { get; set; }
         public virtual HiringRequest Request { get; set; }
     }
 }

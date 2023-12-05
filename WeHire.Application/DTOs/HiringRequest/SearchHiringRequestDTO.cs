@@ -8,8 +8,6 @@ namespace WeHire.Application.DTOs.HiringRequest
 {
     public class SearchHiringRequestDTO
     {
-        public string? RequestCode { get; set; }
-        public string? JobTitle { get; set; } 
         public int? NumberOfDev { get; set; } 
         public int? TargetedDev { get; set; } 
         public DateTime? Duration { get; set; } 

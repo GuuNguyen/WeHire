@@ -25,9 +25,9 @@ namespace WeHire.Infrastructure.Services.PercentCalculatServices
             {
                 TypeMatching = typePercentage.Equals(100),
                 LevelMatching = levelPercentage.Equals(100),
-                SalaryPerDevPercentage = salaryPercentage,
-                SkillPercentage = skillPercentage,
-                AveragedPercentage = matchPercentage
+                SalaryPerDevPercentage = Math.Round(salaryPercentage, 0),
+                SkillPercentage = Math.Round(skillPercentage, 0),
+                AveragedPercentage = Math.Round(matchPercentage, 0)
             };
 
             return matchingPercentObj;

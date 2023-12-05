@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WeHire.Application.DTOs.SelectingDev
+namespace WeHire.Application.DTOs.HiredDeveloper
 {
     public class SendDevDTO
     {

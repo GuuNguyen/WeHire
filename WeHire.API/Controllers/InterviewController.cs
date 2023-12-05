@@ -97,9 +97,9 @@ namespace WeHire.API.Controllers
 
         [HttpGet("Dev/{devId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInterviewByDevId(int devId)
+        public async Task<IActionResult> GetInterviewByDevId(int devId, [FromQuery] SearchInterviewDTO searchKey)
         {
-            var result = await _interviewService.GetInterviewByDevId(devId);
+            var result = await _interviewService.GetInterviewByDevId(devId, searchKey);
 
             return Ok(new ApiResponse<List<GetListInterview>>()
             {

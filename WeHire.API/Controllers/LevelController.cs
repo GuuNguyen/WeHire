@@ -65,11 +65,11 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpDelete("levelId")]
+        [HttpDelete("{levelId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> DeleteLevelAsync(int skillId)
+        public async Task<IActionResult> DeleteLevelAsync(int levelId)
         {
-            await _levelService.DeleteLevelAsync(skillId);
+            await _levelService.DeleteLevelAsync(levelId);
             return Ok(new ApiResponse<string>()
             {
                 Code = StatusCodes.Status200OK,

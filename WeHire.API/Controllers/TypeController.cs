@@ -64,7 +64,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpDelete("typeId")]
+        [HttpDelete("{typeId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteTypeAsync(int typeId)
         {

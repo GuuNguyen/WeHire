@@ -20,7 +20,6 @@ namespace WeHire.Entity.IRepositories
         IGenericRepository<Type> TypeRepository { get; }
         IGenericRepository<CompanyPartner> CompanyRepository { get; }
         IGenericRepository<HiringRequest> RequestRepository { get; }
-        IGenericRepository<SelectedDev> SelectedDevRepository { get; }
         IGenericRepository<Interview> InterviewRepository { get; }
         IGenericRepository<Gender> GenderRepository { get; }
         IGenericRepository<EmploymentType> EmploymentTypeRepository { get; }
@@ -35,10 +34,11 @@ namespace WeHire.Entity.IRepositories
         IGenericRepository<HiredDeveloper> HiredDeveloperRepository { get; }
         IGenericRepository<Contract> ContractRepository { get; }
         IGenericRepository<ProjectType> ProjectTypeRepository { get; }
-        IGenericRepository<JobPosition> JobPositionRepository { get; }
         IGenericRepository<PayPeriod> PayPeriodRepository { get; }
         IGenericRepository<PaySlip> PaySlipRepository { get; }
         IGenericRepository<WorkLog> WorkLogRepository { get; }
+        IGenericRepository<Report> ReportRepository { get; }
+        IGenericRepository<ReportType> ReportTypeRepository { get; }
 
         IDbTransaction BeginTransaction(); 
         Task SaveChangesAsync();

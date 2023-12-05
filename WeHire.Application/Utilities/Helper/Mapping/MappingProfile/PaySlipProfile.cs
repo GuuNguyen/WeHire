@@ -19,6 +19,8 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                  .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.HiredDeveloper.Developer.User.Email))
                  .ForMember(dest => dest.TotalEarnings, opt => opt.MapFrom(src => src.TotalEarnings!.Value.ToString("#,##0 VND") ))
                  .ReverseMap();
+
+            CreateMap<PaySlip, UpdatePaySlipModel>().ReverseMap();
         }
     }
 }

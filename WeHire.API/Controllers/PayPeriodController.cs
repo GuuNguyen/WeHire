@@ -65,18 +65,19 @@ namespace WeHire.API.Controllers
             }
 
             var fileExtension = Path.GetExtension(excelFile.File.FileName).ToLowerInvariant();
+
             if (fileExtension != ".xlsx" && fileExtension != ".xls")
             {
                 return BadRequest("Please upload a valid Excel file.");
             }
             var importExcelModel = _excelService.ImportExcelFile(excelFile.File);
 
-            await _payPeriodService.InsertPayPeriodFromExcel(projectId, importExcelModel);
+            var month = await _payPeriodService.InsertPayPeriodFromExcel(projectId, importExcelModel);
 
             return Created(string.Empty, new ApiResponse<string>()
             {
                 Code = StatusCodes.Status201Created,
-                Data = "PayPeriod created successfully"
+                Data = month
             });
         }
 
