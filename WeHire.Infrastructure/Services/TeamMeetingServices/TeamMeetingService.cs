@@ -74,12 +74,13 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
             var service = GetGraphService(model.authenCode, model.RedirectUrl);
 
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
-                                                                 .Include(i => i.Developer)
-                                                                        .ThenInclude(d => d.User)
+                                                                 .Include(i => i.HiredDeveloper)
+                                                                 .ThenInclude(i => i.Developer)
+                                                                 .ThenInclude(d => d.User)
                                                                  .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
 
-            var developerFullname = $"{interview.Developer.User.FirstName} {interview.Developer.User.LastName}";
+            var developerFullname = $"{interview.HiredDeveloper.Developer.User.FirstName} {interview.HiredDeveloper.Developer.User.LastName}";
             var convertedDate = ConvertDateTime.ConvertDateToStringForMeeting(interview.DateOfInterview);
             var convertedStartTime = ConvertTime.ConvertTimeToShortFormat(interview.StartTime);
             var convertedEndTime = ConvertTime.ConvertTimeToShortFormat(interview.EndTime);
@@ -114,7 +115,7 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
                     {
                         EmailAddress = new EmailAddress
                         {
-                            Address = interview.Developer.User.Email,
+                            Address = interview.HiredDeveloper.Developer.User.Email,
                             Name = developerFullname,
                         },
                         Type = AttendeeType.Required,
@@ -146,8 +147,9 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
             var service = GetGraphService(model.authenCode, model.RedirectUrl);
 
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
-                                                                 .Include(i => i.Developer)
-                                                                        .ThenInclude(d => d.User)
+                                                                 .Include(i => i.HiredDeveloper)
+                                                                 .ThenInclude(i => i.Developer)
+                                                                 .ThenInclude(d => d.User)
                                                                  .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
            
@@ -187,8 +189,6 @@ namespace WeHire.Infrastructure.Services.TeamMeetingServices
             var service = GetGraphService(model.authenCode, model.RedirectUrl);
 
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == model.InterviewId)
-                                                                 .Include(i => i.Developer)
-                                                                        .ThenInclude(d => d.User)
                                                                  .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
            

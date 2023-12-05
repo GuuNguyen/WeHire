@@ -17,7 +17,6 @@ namespace WeHire.Application.DTOs.Contract
         public string LegalRepresentationPosition { get; set; }
         public string DeveloperName { get; set; }
         public string DeveloperPhoneNumber { get; set; }
-        public string DeveloperJobPositon { get; set; }
         public int? YearOfExperience { get; set; }
         public decimal? BasicSalary { get; set; }
         public string EmploymentType { get; set; }

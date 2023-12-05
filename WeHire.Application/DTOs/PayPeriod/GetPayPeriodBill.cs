@@ -23,9 +23,12 @@ namespace WeHire.Application.DTOs.PayPeriod
         public string CompanyEmail { get; set; }
         public string CompanyAddress { get; set; }
         public string CompanyImage { get; set; }
-        public string TotalOTAmount { get; set; }
+
         public string TotalActualAmount { get; set; }
+        public string TotalOTAmount { get; set; }
         public string TotalAmount { get; set; }
+        public string CommissionAmount { get; set; }
+        public string TotalDue { get; set; }
         public List<string> DeveloperFullName { get; set; }
     }
 }

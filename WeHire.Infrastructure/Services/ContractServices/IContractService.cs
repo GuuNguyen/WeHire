@@ -11,6 +11,7 @@ namespace WeHire.Infrastructure.Services.ContractServices
     public interface IContractService
     {
         public List<GetListContract> GetContractAsync(PagingQuery query, SearchContractDTO searchKey);
+        public List<GetListContract> GetContractByCompanyAsync(int companyId, PagingQuery query, SearchContractDTO searchKey);
         public Task<GetPreContract> GetPreContractAsync(int developerId, int requestId);
         public Task<GetContractDetail> GetContractByIdAsync(int contractId);
         public Task<GetContractDetail> GetContractByDevAsync(int developerId, int projectId);
@@ -18,6 +19,6 @@ namespace WeHire.Infrastructure.Services.ContractServices
         public Task<GetContractDTO> ConfirmSignedContractAsync(int contractId);
         public Task<GetContractDTO> FailContractAsync(int contractId);
         public Task FailContractOnBackgroundAsync(DateTime currentDate);
-        public Task<int> GetTotalItemAsync();
+        public Task<int> GetTotalItemAsync(int? companyId = null);
     }
 }

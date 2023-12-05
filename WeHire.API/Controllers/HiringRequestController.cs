@@ -62,9 +62,12 @@ namespace WeHire.API.Controllers
 
         [HttpGet("ByDev")]
         [ProducesResponseType(typeof(ApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
-        public IActionResult GetRequestByDevId([FromQuery] int devId, [FromQuery] int status)
+        public IActionResult GetRequestByDevId([FromQuery] int devId, 
+                                               [FromQuery] int status, 
+                                               [FromQuery] string? searchKeyString, 
+                                               [FromQuery] SearchHiringRequestDTO searchKey)
         {
-            var result =  _requestService.GetRequestsByDevId(devId, status);
+            var result =  _requestService.GetRequestsByDevId(devId, status, searchKeyString, searchKey);
 
             return Ok(new ApiResponse<List<GetAllFieldRequest>>()
             {
@@ -77,11 +80,12 @@ namespace WeHire.API.Controllers
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRequestByCompanyId([FromQuery] int companyId,
                                                                [FromQuery] PagingQuery query,
+                                                               [FromQuery] string? searchKeyString,
                                                                [FromQuery] SearchHiringRequestDTO searchKey,
                                                                [FromQuery] SearchExtensionDTO searchExtensionKey)
         {
-            var result = await _requestService.GetRequestsByCompanyId(companyId, query, searchKey, searchExtensionKey);
-            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
+            var result = await _requestService.GetRequestsByCompanyId(companyId, query, searchKeyString, searchKey, searchExtensionKey);
+            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull() && searchKeyString == null)
                        ? await _requestService.GetTotalRequestsAsync(companyId)
                        : result.Count;
             var paging = new PaginationInfo
@@ -98,41 +102,16 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpGet("ByCompany/Expired")]
-        [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetExpiredRequestByCompanyId([FromQuery] int companyId,
-                                                                      [FromQuery] PagingQuery query,
-                                                                      [FromQuery] SearchHiringRequestDTO searchKey,
-                                                                      [FromQuery] SearchExtensionDTO searchExtensionKey)
-        {
-            var result = await _requestService.GetExpiredRequestsByCompanyId(companyId, query, searchKey, searchExtensionKey);
-            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
-                       ? await _requestService.GetTotalExpiredRequestsAsync(companyId)
-                       : result.Count;
-            var paging = new PaginationInfo
-            {
-                Page = query.PageIndex,
-                Size = query.PageSize,
-                Total = total
-            };
-            return Ok(new PagedApiResponse<GetAllFieldRequest>()
-            {
-                Code = StatusCodes.Status200OK,
-                Paging = paging,
-                Data = result
-            });
-        }
-
-
         [HttpGet("ByProject")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRequestByProject([FromQuery] int projectId,
                                                              [FromQuery] PagingQuery query,
+                                                             [FromQuery] string? searchKeyString,
                                                              [FromQuery] SearchHiringRequestDTO searchKey,
                                                              [FromQuery] SearchExtensionDTO searchExtensionKey)
         {
-            var result = await _requestService.GetRequestsByProjectId(projectId, query, searchKey, searchExtensionKey);
-            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
+            var result = await _requestService.GetRequestsByProjectId(projectId, query, searchKeyString, searchKey, searchExtensionKey);
+            var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull() && searchKeyString == null)
                        ? await _requestService.GetTotalRequestsByProjectIdAsync(projectId)
                        : result.Count;
             var paging = new PaginationInfo

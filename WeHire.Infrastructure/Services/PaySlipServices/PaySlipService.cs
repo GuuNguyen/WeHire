@@ -51,9 +51,13 @@ namespace WeHire.Infrastructure.Services.PaySlipServices
         {
             var paySlip = await _unitOfWork.PaySlipRepository.GetByIdAsync(requestBody.PaySlipId)
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "paySlip", "paySlip does not exist!!");
-            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId)
+
+            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId &&
+                                                                           p.Status == (int)PayPeriodStatus.Created)
                                                                  .Include(p => p.PaySlips)
-                                                                 .SingleOrDefaultAsync();
+                                                                 .SingleOrDefaultAsync()
+              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "payPeriod", "payPeriod does not exist!!");
+
             var updatedPaySlip = _mapper.Map(requestBody, paySlip);
             
             paySlip.TotalEarnings = _payPeriodService.GetTotalEarningByDeveloperCode(paySlip.HiredDeveloperId, paySlip.TotalActualWorkedHours, updatedPaySlip.TotalOvertimeHours);
@@ -61,6 +65,7 @@ namespace WeHire.Infrastructure.Services.PaySlipServices
             _unitOfWork.PaySlipRepository.Update(updatedPaySlip);
 
             payPeriod.TotalAmount = payPeriod.PaySlips.Sum(p => p.TotalEarnings ?? 0);
+            payPeriod.UpdatedAt = DateTime.Now;
             await _unitOfWork.SaveChangesAsync();
 
             return new GetUpdatePaySlipResponse

@@ -8,6 +8,7 @@ namespace WeHire.Application.DTOs.Developer
 {
     public class GetDeveloperInProject
     {
+        public int HiredDeveloperId { get; set; }
         public int DeveloperId { get; set; }
         public int? UserId { get; set; }
         public string FirstName { get; set; }
@@ -19,7 +20,9 @@ namespace WeHire.Application.DTOs.Developer
         public string GenderString { get; set; }
         public int? YearOfExperience { get; set; }
         public int? AverageSalary { get; set; }
-        public string? DevStatusString { get; set; }
+        public string StartWorkingDate { get; set; }
+        public string EndWorkingDate { get; set; }
+        public string? HiredDevStatusString { get; set; }
         public string EmploymentTypeName { get; set; }
         public string LevelRequireName { get; set; }
         public List<string> TypeRequireStrings { get; set; }

@@ -11,6 +11,7 @@ namespace WeHire.Domain.Entities
         public DateTime? WorkDate { get; set; }
         public TimeSpan? TimeIn { get; set; }
         public TimeSpan? TimeOut { get; set; }
+        public bool? IsPaidLeave { get; set; }
         public int? PaySlipId { get; set; }
 
         public virtual PaySlip PaySlip { get; set; }

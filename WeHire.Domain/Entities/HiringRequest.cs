@@ -9,8 +9,8 @@ namespace WeHire.Domain.Entities
     {
         public HiringRequest()
         {
+            HiredDevelopers = new HashSet<HiredDeveloper>();
             Interviews = new HashSet<Interview>();
-            SelectedDevs = new HashSet<SelectedDev>();
             SkillRequires = new HashSet<SkillRequire>();
         }
 
@@ -29,18 +29,18 @@ namespace WeHire.Domain.Entities
         public string RejectionReason { get; set; }
         public int Status { get; set; }
         public int? CompanyId { get; set; }
-        public int? JobPositionId { get; set; }
+        public int? ProjectId { get; set; }
         public int? TypeRequireId { get; set; }
         public int? LevelRequireId { get; set; }
         public int? EmploymentTypeId { get; set; }
 
         public virtual CompanyPartner Company { get; set; }
         public virtual EmploymentType EmploymentType { get; set; }
-        public virtual JobPosition JobPosition { get; set; }
         public virtual Level LevelRequire { get; set; }
+        public virtual Project Project { get; set; }
         public virtual Type TypeRequire { get; set; }
+        public virtual ICollection<HiredDeveloper> HiredDevelopers { get; set; }
         public virtual ICollection<Interview> Interviews { get; set; }
-        public virtual ICollection<SelectedDev> SelectedDevs { get; set; }
         public virtual ICollection<SkillRequire> SkillRequires { get; set; }
     }
 }

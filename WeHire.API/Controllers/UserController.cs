@@ -46,7 +46,7 @@ namespace WeHire.API.Controllers
 
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserByIdAsync(int id)
+        public async Task<IActionResult> GetUserLoginAsync(int id)
         {
             var result = await _userService.GetUserLoginAsync(id);
 
@@ -110,11 +110,11 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpPut("ChangeRole")]
+        [HttpDelete("ChangeStatus/{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ChangeRoleAsync(ChangeRoleDTO newRole)
+        public async Task<IActionResult> ChangeStatusAsync(int id)
         {
-            var result = await _userService.ChangeRoleAsync(newRole);
+            var result = await _userService.ChangeStatusAsync(id);
 
             return Ok(new ApiResponse<GetUserDetail>()
             {
@@ -122,18 +122,5 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
-
-        //[HttpDelete("ChangeStatus/{userId}")]
-        //[ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
-        //public async Task<IActionResult> ChangeStatusAsync(int userId)
-        //{
-        //    var result = await _userService.ChangeStatusAsync(userId);
-
-        //    return Ok(new ApiResponse<GetUserDetail>()
-        //    {
-        //        Code = StatusCodes.Status200OK,
-        //        Data = result
-        //    });
-        //}
     }
 }

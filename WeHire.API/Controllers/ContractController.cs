@@ -21,7 +21,7 @@ namespace WeHire.API.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetListContract>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreContract([FromQuery] PagingQuery query, [FromQuery] SearchContractDTO searchKey)
+        public async Task<IActionResult> GetAllContract([FromQuery] PagingQuery query, [FromQuery] SearchContractDTO searchKey)
         {
             var result = _contractService.GetContractAsync(query, searchKey);
             var total = searchKey.AreAllPropertiesNull() ? await _contractService.GetTotalItemAsync()
@@ -40,9 +40,30 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpGet("ByCompany")]
+        [ProducesResponseType(typeof(PagedApiResponse<GetListContract>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllContractByCompany(int companyId, [FromQuery] PagingQuery query, [FromQuery] SearchContractDTO searchKey)
+        {
+            var result = _contractService.GetContractByCompanyAsync(companyId, query, searchKey);
+            var total = searchKey.AreAllPropertiesNull() ? await _contractService.GetTotalItemAsync(companyId)
+                                                         : result.Count;
+            var paging = new PaginationInfo
+            {
+                Page = query.PageIndex,
+                Size = query.PageSize,
+                Total = total
+            };
+            return Ok(new PagedApiResponse<GetListContract>()
+            {
+                Code = StatusCodes.Status200OK,
+                Paging = paging,
+                Data = result
+            });
+        }
+
         [HttpGet("{contractId}")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDetail>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreContract(int contractId)
+        public async Task<IActionResult> GetContractById(int contractId)
         {
             var result = await _contractService.GetContractByIdAsync(contractId);
             return Ok(new ApiResponse<GetContractDetail>()
@@ -89,6 +110,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+
         [HttpPut("ConfirmSigned")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ConfirmSignedContract(int contractId)
@@ -100,6 +122,7 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
+
 
         [HttpPut("FailContract")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDTO>), StatusCodes.Status200OK)]

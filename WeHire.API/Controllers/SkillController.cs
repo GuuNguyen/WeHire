@@ -64,7 +64,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpDelete("skillId")]
+        [HttpDelete("{skillId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteSkillAsync(int skillId)
         {

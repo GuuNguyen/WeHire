@@ -17,7 +17,7 @@ namespace WeHire.Application.DTOs.Developer
         public int? AverageSalary { get; set; }
         public int InterviewRound { get; set; }
         public string? DevStatusString { get; set; }
-        public string? SelectedDevStatus { get; set; }
+        public string? HiredDeveloperStatus { get; set; }
         public string LevelRequireName { get; set; }
         public List<string> TypeRequireStrings { get; set; }
         public List<string> SkillRequireStrings { get; set; }

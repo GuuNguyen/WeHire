@@ -15,6 +15,7 @@ using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.ExcelServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.PayPeriodEnum;
 
 namespace WeHire.Infrastructure.Services.PayPeriodServices
@@ -53,6 +54,10 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
 
             var totalOTAmount = 0M;
             var totalActualAmount = 0M;
+
+            var commissionAmount = payPeriod.TotalAmount * 8 / 100;
+            var totalDue = payPeriod.TotalAmount + commissionAmount;
+
             var developerFullNames = new List<string>();
             foreach(var paySlip in payPeriod.PaySlips)
             {
@@ -62,9 +67,11 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
             }
 
             var mappedPayPeriod = _mapper.Map<GetPayPeriodBill>(payPeriod);
-            mappedPayPeriod.TotalActualAmount = totalActualAmount.ToString("#,##0 VND"); ;
-            mappedPayPeriod.TotalOTAmount = totalOTAmount.ToString("#,##0 VND"); ;
+            mappedPayPeriod.TotalActualAmount = totalActualAmount.ToString("#,##0 VND");
+            mappedPayPeriod.TotalOTAmount = totalOTAmount.ToString("#,##0 VND");
             mappedPayPeriod.TotalAmount = payPeriod.TotalAmount?.ToString("#,##0 VND");
+            mappedPayPeriod.CommissionAmount = commissionAmount?.ToString("#,##0 VND");
+            mappedPayPeriod.TotalDue = totalDue?.ToString("#,##0 VND");
             mappedPayPeriod.DeveloperFullName = developerFullNames;
             return mappedPayPeriod;
         }
@@ -88,8 +95,10 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
 
             var anyDevWorked = project.HiredDevelopers.Where(h => (h.Contract.FromDate >= payPeriodDuration.StartDate ||
                                                                    h.Contract.ToDate <= payPeriodDuration.EndDate) &&
-                                                                   h.Contract.Status == (int)ContractEnum.ContractStatus.Signed)
+                                                                   h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
+                                                                   h.Status == (int)HiredDeveloperStatus.Working)
                                                        .ToList();
+
             if (!anyDevWorked.Any())
             {
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Project", $"There are no developers worked in {payPeriodDuration.Month}!!");
@@ -126,7 +135,8 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
                         {
                             WorkDate = d,
                             TimeIn = null,
-                            TimeOut = null
+                            TimeOut = null,
+                            IsPaidLeave = null,
                         }).ToList()
                     };
                 }).ToList()
@@ -139,7 +149,7 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
         }
 
 
-        public async Task InsertPayPeriodFromExcel(int projectId, ImportPaySlipModel importPaySlipModel)
+        public async Task<string> InsertPayPeriodFromExcel(int projectId, ImportPaySlipModel importPaySlipModel)
         {
             var isExistPayPeriod = await _unitOfWork.PayPeriodRepository.AnyAsync(p => p.ProjectId == projectId &&
                                                                                        p.StartDate == importPaySlipModel.StartDate &&
@@ -152,9 +162,12 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
                               .Include(h => h.Developer)
                               .Select(h => h.Developer)
                               .ToList();
-            var hiredDeveloper = _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId && h.Contract.Status == (int)ContractEnum.ContractStatus.Signed)
-                                                                     .Include(h => h.Contract)
-                                                                     .ToList();
+            var hiredDeveloper = _unitOfWork.HiredDeveloperRepository
+                                .Get(h => h.ProjectId == projectId && 
+                                        h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
+                                        h.Status == (int)HiredDeveloperStatus.Working)
+                                .Include(h => h.Contract)
+                                .ToList();
 
             var developerCodes = importPaySlipModel.PaySlips.Select(p => p.CodeName).ToList();
 
@@ -230,6 +243,8 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
                 transaction.Rollback();
                 throw;
             }
+
+            return importPaySlipModel.EndDate.ToString("MMMM yyyy");
         }
 
 
@@ -239,13 +254,14 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
 
             var durationInMonth = GetPayPeriodDuration(project.StartDate, project.EndDate, inputDate);
 
-            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId && h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
+            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId && 
+                                                                          h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
+                                                                          h.Status == (int)HiredDeveloperStatus.Working &&
                                                                          (h.Contract.FromDate <= durationInMonth.StartDate ||
                                                                           h.Contract.ToDate >= durationInMonth.EndDate))
                                                                      .Include(h => h.Developer)
                                                                         .ThenInclude(d => d.User)
                                                                      .Include(d => d.Contract)
-                                                                     .Include(d => d.JobPosition)
                                                                      .ToListAsync();
             if (!hiredDev.Any())
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Project", $"There are no developers worked in {durationInMonth.Month}!!");
@@ -261,7 +277,6 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
             {
                 Fullname = $"{h.Developer.User.FirstName} {h.Developer.User.LastName}",
                 CodeName = h.Developer.CodeName,
-                Position = h.JobPosition.PositionName,
                 BasicSalary = h.Contract.BasicSalary,
                 FromDate = h.Contract.FromDate,
                 ToDate = h.Contract.ToDate,
@@ -395,6 +410,7 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
                 DayRangeInMonth = dayRange
             };
         }
+
         private async Task<string> GenerateUniqueCodeName()
         {
             Random random = new Random();
@@ -418,7 +434,7 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
             if (nonExistentDeveloperCodes.Any())
             {
                 var nonExistentCodes = string.Join(", ", nonExistentDeveloperCodes);
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Developer", $"Developer with codes '{nonExistentCodes}' do not exist in the project.");
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Developer", $"Developer with codes '{nonExistentCodes}' do not working in the project.");
             }
 
             foreach (var developer in developers)

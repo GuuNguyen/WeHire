@@ -12,6 +12,11 @@ namespace WeHire.Application.DTOs.Transaction
         public int? PayerId { get; set; }
         public int? PayPeriodId { get; set; }
         public string? PayPalTransactionId { get; set; }
+        public string CompanyName { get; set; }
+        public string CompanyImage { get; set; }
+        public string ProjectName { get; set; }
+        public string ProjectCode { get; set; }
+        public string PayForMonth { get; set; }
         public string Timestamp { get; set; }
         public string? PaymentMethod { get; set; }
         public string Amount { get; set; }

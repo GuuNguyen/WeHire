@@ -24,13 +24,11 @@ using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.FileServices;
 using WeHire.Infrastructure.Services.PercentCalculatServices;
-using WeHire.Infrastructure.Services.SelectingDevServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
 using static WeHire.Domain.Enums.LevelEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.SkillEnum;
 using static WeHire.Domain.Enums.TypeEnum;
 using static WeHire.Domain.Enums.UserEnum;
@@ -42,17 +40,14 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IFileService _fileService;
-        private readonly ISelectingDevService _selectingDevService;
         private readonly IPercentCalculateService _percentCalculateService;
 
         public DeveloperService(IUnitOfWork unitOfWork, IMapper mapper,
-                                IFileService fileService, IPercentCalculateService percentCalculateService,
-                                ISelectingDevService selectingDevService)
+                                IFileService fileService, IPercentCalculateService percentCalculateService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileService = fileService;
-            _selectingDevService = selectingDevService;
             _percentCalculateService = percentCalculateService;
         }
 
@@ -111,12 +106,12 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
             var newDevDetail = _mapper.Map<GetDevDetail>(dev);
             return newDevDetail;
         }
-        public List<GetDeveloperInProject> GetDevsByProjectId(int projectId)
+
+        public List<GetDeveloperInProject> GetDevsByProjectId(DevInProjectRequestModel requestBody)
         {
-            var devs = _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId &&
-                                                           h.Status != (int)HiredDeveloperStatus.ContractProcessing &&
-                                                           h.Status != (int)HiredDeveloperStatus.ContractFailed)
+            var hiredDevs = _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == requestBody.ProjectId)
                                                            .Include(h => h.Developer.HiredDevelopers)
+                                                           .ThenInclude(h => h.Contract)
                                                            .Include(s => s.Developer.User)
                                                            .Include(s => s.Developer.Gender)
                                                            .Include(r => r.Developer.EmploymentType)
@@ -125,8 +120,12 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                                                .ThenInclude(dt => dt.Type)
                                                            .Include(s => s.Developer.DeveloperSkills)
                                                                .ThenInclude(ds => ds.Skill)
-                                                           .Select(s => s.Developer)
                                                            .ToList();
+
+            if(requestBody.Status != null && requestBody.Status.Any())
+                hiredDevs = hiredDevs.Where(h => requestBody.Status.Contains(h.Status)).ToList();
+
+            var devs = hiredDevs.Select(h => h.Developer).ToList();
 
             var mappedDevs = _mapper.Map<List<GetDeveloperInProject>>(devs);
             return mappedDevs;
@@ -153,9 +152,13 @@ namespace WeHire.Infrastructure.Services.DeveloperServices
                                                       .ToList();
 
             var matchingDevs = new List<GetMatchingDev>();
-            //var selectedDev = await _selectingDevService.GetSelectedDevsById(requestId);
-            //var devsExpected = GetExceptDev(devs, selectedDev);
-            foreach (var dev in devs)
+            var developerExistedInRequest = await _unitOfWork.HiredDeveloperRepository.Get(h => h.RequestId == requestId)
+                                                                                      .AsNoTracking()
+                                                                                      .Include(h => h.Developer)
+                                                                                      .Select(h => h.Developer)
+                                                                                      .ToListAsync();
+            var devsExpected = GetExceptDev(devs, developerExistedInRequest);
+            foreach (var dev in devsExpected)
             {
                 var matchingPercentObj = _percentCalculateService.CalculateMatchingPercentage(request, dev);
                 var mappedDev = _mapper.Map<GetMatchingDev>(dev);

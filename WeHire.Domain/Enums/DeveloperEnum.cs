@@ -11,9 +11,6 @@ namespace WeHire.Domain.Enums
     {
         public enum DeveloperStatus
         {
-            [Description("Unavailable")]
-            Unavailable = 0,
-
             [Description("Available")]
             Available = 1,
 

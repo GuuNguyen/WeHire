@@ -33,7 +33,8 @@ namespace WeHire.Infrastructure.Services.PaymentServices
         private readonly ITransactionService _transactionService;
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
-        private string _clientId, _secret;
+        private string _clientId, _secret, _baseUrl;
+
         public PaymentService(IConfiguration configuration, IUnitOfWork unitOfWork, ITransactionService transactionService)
         {
             _transactionService = transactionService;
@@ -41,6 +42,7 @@ namespace WeHire.Infrastructure.Services.PaymentServices
             _unitOfWork = unitOfWork;
             _clientId = _configuration["PayPal:ClientId"];
             _secret = _configuration["PayPal:Secret"];
+            _baseUrl = _configuration["PayPal:BaseUrl"];
         }
 
         public static HttpClient GetPaypalHttpClient()
@@ -69,7 +71,7 @@ namespace WeHire.Infrastructure.Services.PaymentServices
             //};
             //request.Content = new FormUrlEncodedContent(form);
 
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/v1/oauth2/token");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/v1/oauth2/token");
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(bytes));
             request.Content = new StringContent("grant_type=client_credentials", null, "application/x-www-form-urlencoded");
 
@@ -93,48 +95,57 @@ namespace WeHire.Infrastructure.Services.PaymentServices
             if(payPeriod == null)
                throw new ExceptionResponse(HttpStatusCode.BadRequest, "PayPeriod", "PayPeriod does not exist!");
 
+            var amount = payPeriod.TotalAmount + payPeriod.TotalAmount * 8/100;
+
             var newTransaction = new Transaction
             {
                 PayerId = requestBody.PayerId,
                 PayPeriodId = requestBody.PayPeriodId,
                 PayPalTransactionId = null,
                 PaymentMethod = "PayPal",
-                Amount = Math.Round((decimal)payPeriod.TotalAmount, 0),
+                Amount = Math.Round((decimal)amount!, 0),
                 Currency = currencyStr,
                 Description = requestBody.Description,
                 Timestamp = DateTime.Now,
                 State = null,
                 Status = (int)TransactionStatus.Failed
             };
-            await _transactionService.CreateTransactionAsync(newTransaction);
 
+            await _transactionService.CreateTransactionAsync(newTransaction);
 
             var payment = JObject.FromObject(new
             {
-                intent = "sale",
-                redirect_urls = new
+                intent = "CAPTURE",
+                payment_source = new
                 {
-                    return_url = requestBody.ReturnUrl,
-                    cancel_url = "http://example.com/your_cancel_url.html"
-                },
-                payer = new { payment_method = paymentMethod },
-                transactions = JArray.FromObject(new[]
-                {
-                        new
+                    paypal = new
+                    {
+                        experience_context = new
                         {
-                            amount = new
-                            {
-                                total =  Math.Round((decimal)payPeriod.TotalAmount / 24240, 0),
-                                currency = currencyStr
-                            },
-                            description = requestBody.Description,
+                            payment_method_preference = "IMMEDIATE_PAYMENT_REQUIRED",
+                            brand_name = "WeHire CO",
+                            locale = "en-US",
+                            landing_page = "LOGIN",
+                            user_action = "PAY_NOW",
+                            return_url = requestBody.ReturnUrl,
+                            cancel_url = "https://example.com/cancelUrl"
                         }
-                    }),
-                application_context = new { shipping_preference = "NO_SHIPPING" }
+                    }
+                },
+                purchase_units = JArray.FromObject(new[]
+                {
+                  new
+                  {
+                      amount = new
+                      {
+                          currency_code = "USD",
+                          value = Math.Round((decimal)amount / 24240, 0)
+                      }
+                  }
+              })
             });
 
-
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "v1/payments/payment");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/v2/checkout/orders");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.access_token);
             request.Content = new StringContent(JsonConvert.SerializeObject(payment), Encoding.UTF8, "application/json");
 
@@ -144,7 +155,7 @@ namespace WeHire.Infrastructure.Services.PaymentServices
 
             string content = await response.Content.ReadAsStringAsync();
             PayPalPaymentCreatedResponse paypalPaymentCreated = JsonConvert.DeserializeObject<PayPalPaymentCreatedResponse>(content);
-            string approvalUrl = paypalPaymentCreated.links.FirstOrDefault(link => link.rel == "approval_url")?.href;
+            string approvalUrl = paypalPaymentCreated.links.FirstOrDefault(link => link.rel == "payer-action")?.href;
 
             newTransaction.Status = (int)TransactionStatus.Created;
             newTransaction.PayPalTransactionId = paypalPaymentCreated.id;
@@ -157,9 +168,14 @@ namespace WeHire.Infrastructure.Services.PaymentServices
 
         public async Task<PayPalPaymentExecutedResponse> ExecutePayPalPaymentAsync(string paymentId, string payerId)
         {
+            var transaction = await _unitOfWork.TransactionRepository.Get(t => t.PayPalTransactionId == paymentId &&
+                                                                               t.Status == (int)TransactionStatus.Created)
+                                                                     .SingleOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Transaction", "Transaction does not exist!!");
+
             var http = GetPaypalHttpClient();
             var accessToken = await GetAccessTokenAsync();
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, $"v1/payments/payment/{paymentId}/execute");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + $"/v2/checkout/orders/{paymentId}/capture");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.access_token);
 
             var payment = JObject.FromObject(new
@@ -171,12 +187,7 @@ namespace WeHire.Infrastructure.Services.PaymentServices
 
             HttpResponseMessage response = await http.SendAsync(request);
             string content = await response.Content.ReadAsStringAsync();
-            PayPalPaymentExecutedResponse executedPayment = JsonConvert.DeserializeObject<PayPalPaymentExecutedResponse>(content);
-
-            var transaction = await _unitOfWork.TransactionRepository.Get(t => t.PayPalTransactionId == paymentId &&
-                                                                               t.Status == (int)TransactionStatus.Created)
-                                                                     .SingleOrDefaultAsync()
-                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Transaction", "Transaction does not exist!!");
+            PayPalPaymentExecutedResponse executedPayment = JsonConvert.DeserializeObject<PayPalPaymentExecutedResponse>(content);     
 
             transaction.State = executedPayment.state;
             if (response.IsSuccessStatusCode)

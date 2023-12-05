@@ -9,8 +9,8 @@ namespace WeHire.Application.DTOs.HiringRequest
     public class GetRequestDTO
     {
         public int RequestId { get; set; }
-        public int? CompanyId { get; set; }
-        public int? JobPositionId { get; set; }
+        public int CompanyId { get; set; }
+        public int ProjectId { get; set; }
         public int? TypeRequireId { get; set; }
         public int? LevelRequireId { get; set; }
         public int? EmploymentTypeId { get; set; }

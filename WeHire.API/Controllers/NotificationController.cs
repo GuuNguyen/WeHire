@@ -61,5 +61,21 @@ namespace WeHire.API.Controllers
             var result = await _notificationService.TestSendNotificationFirebase(deviceToken, title, content, notificationType, routeId);
             return Ok(result);
         }
+
+        [HttpPut("Read")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> ReadNotificationAsync(int notificationId, int userId)
+        {
+            await _notificationService.ReadNotification(notificationId, userId);
+            return NoContent();
+        }
+
+        [HttpPut("UnNew")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> UnNewNotificationAsync(int userId)
+        {
+            await _notificationService.UnNewNotification(userId);
+            return NoContent();
+        }
     }
 }

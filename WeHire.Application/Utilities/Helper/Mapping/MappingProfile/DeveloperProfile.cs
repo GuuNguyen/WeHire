@@ -5,13 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Application.DTOs.Developer;
+using WeHire.Application.Utilities.Helper.ConvertDate;
 using WeHire.Application.Utilities.Helper.EnumDescription;
 using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using static WeHire.Domain.Enums.DeveloperEnum;
-using static WeHire.Domain.Enums.DeveloperTaskEnum;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.UserEnum;
 
 namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
@@ -55,6 +54,7 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.DevStatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((DeveloperStatus)src.Status)));
 
             CreateMap<Developer, GetDeveloperInProject>()
+               .ForMember(dest => dest.HiredDeveloperId, opt => opt.MapFrom(src => src.HiredDevelopers.Where(h => h.DeveloperId == src.DeveloperId).SingleOrDefault()!.HiredDeveloperId))
                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.User.FirstName))
                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.User.LastName))
                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))
@@ -65,7 +65,9 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                .ForMember(dest => dest.GenderString, opt => opt.MapFrom(src => src.Gender.GenderName))
                .ForMember(dest => dest.TypeRequireStrings, opt => opt.MapFrom(src => src.DeveloperTypes.Select(dt => dt.Type.TypeName)))
                .ForMember(dest => dest.SkillRequireStrings, opt => opt.MapFrom(src => src.DeveloperSkills.Select(dt => dt.Skill.SkillName)))
-               .ForMember(dest => dest.DevStatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiredDeveloperStatus)src.HiredDevelopers.Where(h => h.DeveloperId == src.DeveloperId).SingleOrDefault()!.Status)));
+               .ForMember(dest => dest.HiredDevStatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiredDeveloperStatus)src.HiredDevelopers.Where(h => h.DeveloperId == src.DeveloperId).SingleOrDefault()!.Status)))
+               .ForMember(dest => dest.StartWorkingDate, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.HiredDevelopers.Where(h => h.DeveloperId == src.DeveloperId).SingleOrDefault()!.Contract.FromDate)))
+               .ForMember(dest => dest.EndWorkingDate, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.HiredDevelopers.Where(h => h.DeveloperId == src.DeveloperId).SingleOrDefault()!.Contract.ToDate)));
 
             CreateMap<Developer, GetMatchingDev>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.User.FirstName))

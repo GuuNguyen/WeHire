@@ -18,6 +18,8 @@ namespace WeHire.Application.DTOs.Project
         public string Description { get; set; }
         public string? MinStartDate { get; set; }
         public string? MaxEndDate { get; set; }
+        public string StartDate { get; set; }
+        public string EndDate { get; set; }
         public string StartDateMMM { get; set; }
         public string EndDateMMM { get; set; }
         public string CreatedAt { get; set; }

@@ -22,9 +22,10 @@ using WeHire.Infrastructure.Services.NotificationServices;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
+using static WeHire.Domain.Enums.InterviewEnum;
 using static WeHire.Domain.Enums.LevelEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.SkillEnum;
 using static WeHire.Domain.Enums.TypeEnum;
 
@@ -44,13 +45,14 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             _mapper = mapper;
         }
 
+
         public List<GetListHiringRequest> GetAllRequest(PagingQuery query,
                                                       SearchHiringRequestDTO searchKey,
                                                       SearchExtensionDTO searchExtensionKey)
         {
             IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.GetAll()
-                                                        .Include(r => r.Company)
-                                                        .OrderByDescending(n => n.CreatedAt);
+                                                            .Include(r => r.Company)
+                                                            .OrderBy(n => n.Duration);
 
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
@@ -61,33 +63,10 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             return mappedRequests;
         }
 
-        private IQueryable<HiringRequest> SearchBySalary(IQueryable<HiringRequest> query, SearchExtensionDTO searchExtensionKey)
-        {
-            if (searchExtensionKey.StartSalaryPerDev.HasValue)
-            {
-                query = query.Where(r => r.SalaryPerDev >= searchExtensionKey.StartSalaryPerDev.Value);
-            }
-            if (searchExtensionKey.EndSalaryPerDev.HasValue)
-            {
-                query = query.Where(r => r.SalaryPerDev <= searchExtensionKey.EndSalaryPerDev.Value);
-            }
-            return query;
-        }
-
-        private IQueryable<HiringRequest> SearchBySkillIds(IQueryable<HiringRequest> query, List<int>? skillIds)
-        {
-            if (skillIds != null && skillIds.Any())
-            {
-                foreach (var skillId in skillIds)
-                {
-                    query = query.Where(r => r.SkillRequires.Any(sr => sr.SkillId == skillId));
-                }
-            }
-            return query;
-        }
 
         public async Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId,
                                                                            PagingQuery query,
+                                                                           string? searchKeyString,
                                                                            SearchHiringRequestDTO searchKey,
                                                                            SearchExtensionDTO searchExtensionKey)
         {
@@ -97,14 +76,13 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
                                                                                         r.Status != (int)HiringRequestStatus.Expired)
                                                                               .Include(r => r.Company)
-                                                                              .Include(r => r.JobPosition)
                                                                               .Include(r => r.EmploymentType)
                                                                               .Include(lr => lr.LevelRequire)
                                                                               .Include(tr => tr.TypeRequire)
                                                                               .Include(sr => sr.SkillRequires)
                                                                                  .ThenInclude(s => s.Skill)
                                                                               .OrderByDescending(n => n.CreatedAt);
-
+            requests = SearchRequestByString(requests, searchKeyString);
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
             requests = requests.SearchItems(searchKey);
@@ -116,46 +94,22 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 
         public async Task<List<GetAllFieldRequest>> GetRequestsByProjectId(int projectId,
                                                                            PagingQuery query,
+                                                                           string? searchKeyString,
                                                                            SearchHiringRequestDTO searchKey,
                                                                            SearchExtensionDTO searchExtensionKey)
         {
             var company = await _unitOfWork.ProjectRepository.GetByIdAsync(projectId)
                    ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
-            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.JobPosition.Project.ProjectId == projectId)
-                                                                              .Include(r => r.JobPosition)
-                                                                              .Include(c => c.JobPosition.Project)
+            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.Project.ProjectId == projectId)
+                                                                              .Include(c => c.Project)
                                                                               .Include(r => r.EmploymentType)
                                                                               .Include(lr => lr.LevelRequire)
                                                                               .Include(tr => tr.TypeRequire)
                                                                               .Include(sr => sr.SkillRequires)
                                                                                  .ThenInclude(s => s.Skill)
                                                                               .OrderByDescending(n => n.CreatedAt);
-
-            requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
-            requests = SearchBySalary(requests, searchExtensionKey);
-            requests = requests.SearchItems(searchKey);
-            requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
-            var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
-            return mappedRequests;
-        }
-
-        public async Task<List<GetAllFieldRequest>> GetExpiredRequestsByCompanyId(int companyId, PagingQuery query, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey)
-        {
-            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
-                  ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
-
-            IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
-                                                                                        r.Status == (int)HiringRequestStatus.Expired)
-                                                                              .Include(r => r.JobPosition)
-                                                                              .Include(r => r.EmploymentType)
-                                                                              .Include(lr => lr.LevelRequire)
-                                                                              .Include(tr => tr.TypeRequire)
-                                                                              .Include(sr => sr.SkillRequires)
-                                                                                 .ThenInclude(s => s.Skill)
-                                                                              .OrderBy(n => n.Duration);
-
+            requests = SearchRequestByString(requests, searchKeyString);
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
             requests = requests.SearchItems(searchKey);
@@ -168,7 +122,6 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         public async Task<GetAllFieldRequest> GetRequestByIdAsync(int requestId)
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestId)
-                                                             .Include(r => r.JobPosition)
                                                              .Include(r => r.EmploymentType)
                                                              .Include(r => r.TypeRequire)
                                                              .Include(r => r.LevelRequire)
@@ -200,6 +153,8 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var companyName = await _unitOfWork.CompanyRepository.Get(c => c.CompanyId == requestBody.CompanyId)
                                                                  .Select(c => c.CompanyName)
                                                                  .SingleOrDefaultAsync();
+            var project = await _unitOfWork.ProjectRepository.GetByIdAsync(requestBody.ProjectId)
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
 
             var newRequest = _mapper.Map<HiringRequest>(requestBody);
             using var transaction = _unitOfWork.BeginTransaction();
@@ -296,16 +251,16 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             {
                 clonedRequest = new HiringRequest
                 {
-                    JobTitle = request.JobTitle,
+                    ProjectId = request.ProjectId,
+                    CompanyId = request.CompanyId,
                     RequestCode = await GenerateUniqueCodeName(),
+                    JobTitle = request.JobTitle,
                     JobDescription = request.JobDescription,
                     NumberOfDev = request.NumberOfDev,
                     TargetedDev = 0,
                     SalaryPerDev = request.SalaryPerDev,
                     Duration = request.Duration,
                     CreatedAt = DateTime.Now,
-                    CompanyId = request.CompanyId,
-                    JobPositionId = request.JobPositionId,
                     EmploymentTypeId = request.EmploymentTypeId,
                     TypeRequireId = request.TypeRequireId,
                     LevelRequireId = request.LevelRequireId,
@@ -363,22 +318,140 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
                          }).ToListAsync();
         }
 
-        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status)
+        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status, string? searchKeyString, SearchHiringRequestDTO searchKey)
         {
-            var requests = _unitOfWork.SelectedDevRepository
-                                            .Get(s => s.DeveloperId == devId && s.Status == status)
-                                            .Include(r => r.Request)
-                                            .Include(r => r.Request.EmploymentType)
-                                            .Include(r => r.Request.LevelRequire)
-                                            .Include(r => r.Request.TypeRequire)
-                                            .Include(r => r.Request.SkillRequires)
-                                                .ThenInclude(sr => sr.Skill)
-                                            .Select(s => s.Request)
-                                            .Where(r => r.Status == (int)HiringRequestStatus.InProgress)
-                                            .ToList();
+            var requests = _unitOfWork.HiredDeveloperRepository
+                            .Get(s => s.DeveloperId == devId && s.Status == status)
+                            .Include(r => r.Request)
+                            .Include(r => r.Request.EmploymentType)
+                            .Include(r => r.Request.LevelRequire)
+                            .Include(r => r.Request.TypeRequire)
+                            .Include(r => r.Request.SkillRequires)
+                                .ThenInclude(sr => sr.Skill)
+                            .Select(s => s.Request)
+                            .Where(r => r.Status == (int)HiringRequestStatus.InProgress)
+                            .AsQueryable();
+
+            requests = SearchRequestByString(requests, searchKeyString);
+            requests = requests.SearchItems(searchKey);
 
             var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
             return mappedRequests;
+        }
+
+
+        public async Task CheckRequestDeadline(DateTime currentTime)
+        {
+            var requests = await _unitOfWork.RequestRepository.Get(r => r.Status == (int)HiringRequestStatus.InProgress
+                                                                       && currentTime > r.Duration)
+                                                              .Include(r => r.Company)
+                                                              .Include(r => r.Interviews)
+                                                              .Include(r => r.HiredDevelopers)
+                                                              .ThenInclude(s => s.Developer)
+                                                              .ToListAsync();
+            if (requests.Any())
+            {
+                foreach (var request in requests)
+                {
+                    var UserHrId = request.Company.UserId;
+
+                    request.Status = (int)HiringRequestStatus.Expired;
+                    request.IsExpiredOnce = true;
+                    request.ExpiredAt = DateTime.Now;
+                    await _unitOfWork.SaveChangesAsync();
+
+                    await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                                         $"Your hiring request #{request.RequestId} has expired!  You have 3 days to expand this request.");
+                }
+            }
+        }
+
+        public async Task CheckRequestExpired(DateTime currentTime)
+        {
+            var requests = await _unitOfWork.RequestRepository.Get(r => r.Status == (int)HiringRequestStatus.Expired &&
+                                                                        r.IsExpiredOnce == true &&
+                                                                        currentTime > r.ExpiredAt.Value.AddDays(3))
+                                                              .Include(r => r.Company)
+                                                              .Include(r => r.Interviews)
+                                                              .Include(r => r.HiredDevelopers)
+                                                              .ThenInclude(s => s.Developer)
+                                                              .ToListAsync();
+            if (requests.Any())
+            {
+                foreach (var request in requests)
+                {
+                    var UserHrId = request.Company.UserId;
+
+                    await HandleDeveloperAfterCloseHiringRequest(request);
+                    await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                                       $"Your hiring request #{request.RequestId} has been closed because out of duration.");
+                }
+            }
+        }
+
+        public async Task HandleDeveloperAfterCloseHiringRequest(HiringRequest request)
+        {
+            var devs = request.HiredDevelopers.Where(s => s.Status == (int)HiredDeveloperStatus.UnderConsideration ||
+                                                          s.Status == (int)HiredDeveloperStatus.WaitingInterview ||
+                                                          s.Status == (int)HiredDeveloperStatus.InterviewScheduled)
+                                              .Select(s => s.Developer)
+                                              .ToList();
+
+            var interviews = request.Interviews.Where(i => i.Status != (int)InterviewStatus.Cancelled &&
+                                                           i.Status != (int)InterviewStatus.Rejected)
+                                              .ToList();
+            if (interviews.Any())
+            {
+                foreach (var dev in devs)
+                {
+                    var hiredDeveloper = request.HiredDevelopers.SingleOrDefault(s => s.DeveloperId == dev.DeveloperId);
+                    hiredDeveloper.Status = (int)HiredDeveloperStatus.RequestClosed;
+                    dev.Status = (int)DeveloperStatus.Available;
+                    await _notificationService.SendNotificationAsync(dev.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                          $"The hiring request #{request.RequestCode} has been closed.");
+                }
+            }
+            if (interviews.Any())
+            {
+                foreach (var interview in interviews)
+                {
+                    interview.Status = (int)InterviewStatus.Cancelled;
+                }
+            }
+            request.Status = (int)HiringRequestStatus.Closed;
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        private IQueryable<HiringRequest> SearchBySalary(IQueryable<HiringRequest> query, SearchExtensionDTO searchExtensionKey)
+        {
+            if (searchExtensionKey.StartSalaryPerDev.HasValue)
+            {
+                query = query.Where(r => r.SalaryPerDev >= searchExtensionKey.StartSalaryPerDev.Value);
+            }
+            if (searchExtensionKey.EndSalaryPerDev.HasValue)
+            {
+                query = query.Where(r => r.SalaryPerDev <= searchExtensionKey.EndSalaryPerDev.Value);
+            }
+            return query;
+        }
+
+        private IQueryable<HiringRequest> SearchBySkillIds(IQueryable<HiringRequest> query, List<int>? skillIds)
+        {
+            if (skillIds != null && skillIds.Any())
+            {
+                foreach (var skillId in skillIds)
+                {
+                    query = query.Where(r => r.SkillRequires.Any(sr => sr.SkillId == skillId));
+                }
+            }
+            return query;
+        }
+
+        private IQueryable<HiringRequest> SearchRequestByString(IQueryable<HiringRequest> query, string? searchKeyString)
+        {
+            if (searchKeyString != null)
+                return query = query.Where(r => r.RequestCode.Contains(searchKeyString) || r.JobTitle.Contains(searchKeyString));
+            return query;
         }
 
         public List<EnumDetailDTO> GetRequestStatus()
@@ -389,9 +462,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
 
         public async Task<int> GetTotalRequestsAsync(int? companyId = null)
         {
-            IQueryable<HiringRequest> requestQuery = _unitOfWork.RequestRepository.GetAll()
-                                                                                  .Include(r => r.JobPosition)
-                                                                                  .ThenInclude(j => j.Project);
+            IQueryable<HiringRequest> requestQuery = _unitOfWork.RequestRepository.GetAll();
 
             if (companyId.HasValue)
             {
@@ -401,51 +472,6 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             var totalItemCount = await requestQuery.CountAsync();
 
             return totalItemCount;
-        }
-
-
-        public async Task CheckRequestDeadline(DateTime currentTime)
-        {
-            var requests = await _unitOfWork.RequestRepository.Get(r => r.Status == (int)HiringRequestStatus.InProgress
-                                                                       && currentTime > r.Duration)
-                                                              .Include(p => p.Company)
-                                                              .Include(p => p.SelectedDevs)
-                                                              .ThenInclude(s => s.Developer)
-                                                              .ToListAsync();
-            if (requests.Any())
-            {
-                foreach (var request in requests)
-                {
-                    var UserHrId = request.Company.UserId;
-                    if (request.IsExpiredOnce == true && currentTime > request.ExpiredAt.Value.AddDays(3) )
-                    {
-                        var devs = request.SelectedDevs.Where(s => s.Status == (int)SelectedDevStatus.UnderConsideration ||
-                                                                   s.Status == (int)SelectedDevStatus.WaitingInterview ||
-                                                                   s.Status == (int)SelectedDevStatus.InterviewScheduled)
-                                                       .Select(s => s.Developer).ToList();
-                        foreach (var dev in devs)
-                        {
-                            var selectedDev = request.SelectedDevs.SingleOrDefault(s => s.DeveloperId == dev.DeveloperId);
-                            selectedDev.Status = (int)SelectedDevStatus.RequestClosed;
-                            dev.Status = (int)DeveloperStatus.Available;
-                            await _notificationService.SendNotificationAsync(dev.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                  $"The hiring request #{request.RequestId} has been closed.");
-                        }
-                        request.Status = (int)HiringRequestStatus.Closed;
-                        await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                           $"Your hiring request #{request.RequestId} has been closed because out of duration.");
-                    }
-                    else
-                    {
-                        request.Status = (int)HiringRequestStatus.Expired;
-                        request.IsExpiredOnce = true;
-                        request.ExpiredAt = DateTime.Now;
-                        await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                             $"Your hiring request #{request.RequestId} has expired!  You have 3 days to expand this request.");
-                    }
-                    await _unitOfWork.SaveChangesAsync();
-                }
-            }
         }
 
         public async Task<string> DeleteHiringRequest(int requestId)
@@ -463,23 +489,12 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
             return "Delete success!";
         }
 
-        public Task<int> GetTotalExpiredRequestsAsync(int companyId)
-        {
-            var total = _unitOfWork.RequestRepository.Get(r => r.CompanyId == companyId &&
-                                                               r.Status == (int)HiringRequestStatus.Expired)
-                                                       .CountAsync();
-            return total;
-        }
-
         public Task<int> GetTotalRequestsByProjectIdAsync(int projectId)
         {
-            var total = _unitOfWork.RequestRepository.Get(r => r.JobPosition.Project.ProjectId == projectId)
-                                                     .Include(r => r.JobPosition)
-                                                     .ThenInclude(j => j.Project)
+            var total = _unitOfWork.RequestRepository.Get(r => r.ProjectId == projectId)
                                                      .CountAsync();
             return total;
         }
-
 
         private async Task<string> GenerateUniqueCodeName()
         {

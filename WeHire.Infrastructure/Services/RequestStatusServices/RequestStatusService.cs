@@ -11,12 +11,14 @@ using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.GlobalVariables;
 using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
+using WeHire.Infrastructure.Services.HiringRequestServices;
 using WeHire.Infrastructure.Services.NotificationServices;
 using static WeHire.Application.DTOs.HiringRequest.ChangeStatusDTO;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.DeveloperEnum;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
+using static WeHire.Domain.Enums.InterviewEnum;
 
 namespace WeHire.Infrastructure.Services.RequestStatusServices
 {
@@ -25,19 +27,21 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
-
-        public RequestStatusService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
+        private readonly IHiringRequestService _hiringRequestService;
+        public RequestStatusService(IUnitOfWork unitOfWork, IMapper mapper, IHiringRequestService hiringRequestService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
             _mapper = mapper;
+            _hiringRequestService = hiringRequestService;
         }
 
         public async Task<GetRequestDTO> HandleWaitingStatusAsync(WaitingStatus requestBody)
         {
             var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId
                                                                && r.Status == (int)HiringRequestStatus.WaitingApproval)
-                                                             .Include(p => p.Company)
+                                                             .Include(r => r.Project)
+                                                             .ThenInclude(p => p.Company)
                                                              .SingleOrDefaultAsync();
             if (request == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
@@ -45,14 +49,14 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
             if (requestBody.isApproved)
             {
                 request.Status = (int)HiringRequestStatus.InProgress;
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                     $"Your hiring request {request.RequestCode} has been approved by WeHire.");
             }
             else
             {
                 request.Status = (int)HiringRequestStatus.Rejected;
                 request.RejectionReason = requestBody.RejectionReason;
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                     $"Your hiring request {request.RequestCode} has been rejected by WeHire.");
             }
             _unitOfWork.RequestRepository.Update(request);
@@ -68,38 +72,22 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
                                                                 (r.Status == (int)HiringRequestStatus.InProgress ||
                                                                  r.Status == (int)HiringRequestStatus.WaitingApproval ||
                                                                  r.Status == (int)HiringRequestStatus.Expired))
-                                                             .Include(r => r.Company)
-                                                             .Include(r => r.SelectedDevs)
+                                                             .Include(r => r.Interviews)
+                                                             .Include(r => r.Project)
+                                                             .ThenInclude(r => r.Company)
+                                                             .Include(r => r.HiredDevelopers)
+                                                             .ThenInclude(r => r.Developer)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
-            var devIds = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == requestBody.RequestId).Select(s => s.DeveloperId).ToListAsync();
-            var companyName = requestBody.IsCompanyPartner ? request.Company.CompanyName : "WeHire";
+            
+            var companyName = requestBody.IsCompanyPartner ? request.Project.Company.CompanyName : "WeHire";
 
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
-                request.Status = (int)HiringRequestStatus.Closed;
+                await _hiringRequestService.HandleDeveloperAfterCloseHiringRequest(request);
                 request.RejectionReason = requestBody.RejectionReason;
-                if (devIds.Any())
-                {
-                    var devs = await _unitOfWork.SelectedDevRepository.Get(s => s.RequestId == request.RequestId &&
-                                                                                devIds.Contains(s.DeveloperId) && 
-                                                                             (s.Status == (int)SelectedDevStatus.UnderConsideration ||
-                                                                              s.Status == (int)SelectedDevStatus.WaitingInterview ||
-                                                                              s.Status == (int)SelectedDevStatus.InterviewScheduled))
-                                                            .Include(s => s.Developer)
-                                                            .Select(s => s.Developer)
-                                                            .ToListAsync();
-                    foreach (var dev in devs)
-                    {
-                        var selectedDev = request.SelectedDevs.SingleOrDefault(s => s.DeveloperId == dev.DeveloperId);
-                        selectedDev.Status = (int)SelectedDevStatus.RequestClosed;
-                        dev.Status = (int)DeveloperStatus.Available;                       
-                        await _notificationService.SendNotificationAsync(dev.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                              $"The hiring request #{request.RequestId} has been closed by {companyName}.");
-                    }
-                }
-                await _notificationService.SendNotificationAsync(request.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
+                await _notificationService.SendNotificationAsync(request.Project.Company.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
                                             $"Your hiring request #{request.RequestId} has been closed by {companyName}.");
                 _unitOfWork.RequestRepository.Update(request);
                 await _unitOfWork.SaveChangesAsync();

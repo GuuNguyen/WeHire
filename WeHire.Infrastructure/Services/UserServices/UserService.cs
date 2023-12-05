@@ -37,18 +37,6 @@ namespace WeHire.Infrastructure.Services.UserServices
             _mapper = mapper;
             _fileService = fileService;
         }
-  
-        public async Task<GetUserDetail> GetUserByIdAsync(int id)
-        {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
-                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
-
-            if (user.RoleId == (int)RoleEnum.HR)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.ROLE_FIELD, ErrorMessage.NOT_ALLOWS);
-
-            var userDetail = _mapper.Map<GetUserDetail>(user);
-            return userDetail;
-        }
 
         public async Task<object> GetUserLoginAsync(int userId)
         {
@@ -174,11 +162,12 @@ namespace WeHire.Infrastructure.Services.UserServices
             return userDetail;
         }
 
-        public async Task<GetUserDetail> ChangeStatusAsync(int id)
+        public async Task<GetUserDetail> ChangeStatusAsync(int userId)
         {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+
             if (user.Status == (int)UserStatus.Active)
             {
                 user.Status = (int)UserStatus.InActive;
@@ -187,6 +176,7 @@ namespace WeHire.Infrastructure.Services.UserServices
             {
                 user.Status = (int)UserStatus.Active;
             }
+
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 

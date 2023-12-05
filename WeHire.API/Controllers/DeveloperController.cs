@@ -25,7 +25,7 @@ namespace WeHire.API.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldDev>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllDevAsync([FromQuery] PagingQuery query,
-                                                         [FromQuery] SearchDeveloperDTO searchKey)
+                                                        [FromQuery] SearchDeveloperDTO searchKey)
         {
             var result = _devService.GetAllDev(query, searchKey);
             var total = await _devService.GetTotalItemAsync();
@@ -43,17 +43,19 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [HttpGet("ByProject/{projectId}")]
+
+        [HttpGet("ByProject")]
         [ProducesResponseType(typeof(ApiResponse<List<GetDeveloperInProject>>), StatusCodes.Status200OK)]
-        public IActionResult GetDevByProjectId(int projectId)
+        public IActionResult GetDevByProjectId([FromQuery] DevInProjectRequestModel requestBody)
         {
-            var result = _devService.GetDevsByProjectId(projectId);
+            var result = _devService.GetDevsByProjectId(requestBody);
             return Ok(new ApiResponse<List<GetDeveloperInProject>>()
             {
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
         }
+
 
         [HttpGet("{devId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDetail>), StatusCodes.Status200OK)]

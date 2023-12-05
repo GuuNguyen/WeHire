@@ -13,14 +13,13 @@ namespace WeHire.Application.DTOs.HiringRequest
     public class GetAllFieldRequest
     {
         public int RequestId { get; set; }
+        public int ProjectId { get; set; }
         public int CompanyId { get; set; }
-        public int? JobPositionId { get; set; }
         public string RequestCode { get; set; }
         public string JobTitle { get; set; }
         public string JobDescription { get; set; }
         public int NumberOfDev { get; set; }
         public int? TargetedDev { get; set; }
-        public string PositionName { get; set; }
         public DateTime? CreatedAt { get; set; }
         public decimal SalaryPerDev { get; set; }
         public string DurationMMM { get; set; }

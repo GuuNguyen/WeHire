@@ -20,11 +20,6 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<HiringRequest, GetRequestDTO>()
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiringRequestStatus)src.Status)));
 
-            CreateMap<HiringRequest, GetRequestInJobPosition>()
-               .ForMember(dest => dest.DurationMMM, opt => opt.MapFrom(src => ConvertDate.ConvertDateTime.ConvertDateToString(src.Duration)))
-               .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))
-               .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiringRequestStatus)src.Status)));
-
             CreateMap<HiringRequest, GetListHiringRequest>()
                .ForMember(dest => dest.CompanyImage, opt => opt.MapFrom(src => src.Company.CompanyImage))
                .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => ConvertDate.ConvertDateTime.ConvertDateToString(src.Duration)))
@@ -36,8 +31,6 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => ConvertDate.ConvertDateTime.ConvertDateToStringNumber(src.Duration)))
                 .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))
                 .ForMember(dest => dest.StatusString, opt => opt.MapFrom(src => EnumHelper.GetEnumDescription((HiringRequestStatus)src.Status)))
-                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId))
-                .ForMember(dest => dest.PositionName, opt => opt.MapFrom(src => src.JobPosition.PositionName))
                 .ForMember(dest => dest.EmploymentTypeName, opt => opt.MapFrom(src => src.EmploymentType.EmploymentTypeName))
                 .ForMember(dest => dest.TypeRequireName, opt => opt.MapFrom(src => src.TypeRequire.TypeName))
                 .ForMember(dest => dest.LevelRequireName, opt => opt.MapFrom(src => src.LevelRequire.LevelName))

@@ -11,7 +11,7 @@ namespace WeHire.Application.DTOs.HiringRequest
     public class CreateRequestDTO
     {
         public int? CompanyId { get; set; }
-        public int? JobPositionId { get; set; }
+        public int? ProjectId { get; set; }
         public string JobTitle { get; set; }
         public string? JobDescription { get; set; }
         public int? NumberOfDev { get; set; }

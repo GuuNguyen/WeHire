@@ -10,11 +10,10 @@ namespace WeHire.Infrastructure.Services.InterviewServices
 {
     public interface IInterviewService
     {
-        public List<GetListInterview> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey);
         public List<GetListInterview> GetInterviewsByManager(PagingQuery query, int? companyId, SearchInterviewWithRequest searchKey);
         public Task<GetInterviewWithDev> GetInterviewById(int interviewId);  
         public Task<List<GetListInterview>> GetInterviewByRequestIdAsync(int requestId);
-        public Task<List<GetListInterview>> GetInterviewByDevId(int devId);
+        public Task<List<GetListInterview>> GetInterviewByDevId(int devId, SearchInterviewDTO searchKey);
         public Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody);
         public Task<GetInterviewDTO> UpdateInterviewAsync(int interviewId, UpdateInterviewModel requestBody);
         public Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody);

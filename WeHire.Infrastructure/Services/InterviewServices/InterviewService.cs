@@ -18,9 +18,9 @@ using WeHire.Domain.Enums;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.NotificationServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
 using static WeHire.Domain.Enums.InterviewEnum;
-using static WeHire.Domain.Enums.SelectedDevEnum;
 using static WeHire.Domain.Enums.UserEnum;
 using ChangeStatusDTO = WeHire.Application.DTOs.Interview.ChangeStatusDTO;
 
@@ -53,28 +53,16 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             return mappedInterviews;
         }
 
-        public List<GetListInterview> GetInterviewsByCompany(int? companyId, int? requestId, PagingQuery query, SearchInterviewDTO searchKey)
-        {
-            if (!companyId.HasValue) return new();
-            var interviews = _unitOfWork.InterviewRepository.Get(i => i.Request.CompanyId == companyId)
-                                                           .Include(i => i.Request)
-                                                           .AsQueryable();
-
-            if (requestId.HasValue) interviews = interviews.Where(i => i.RequestId == requestId);
-
-            interviews = interviews.SearchItems(searchKey);
-            interviews = interviews.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-            var mappedInterviews = _mapper.Map<List<GetListInterview>>(interviews);
-            return mappedInterviews;
-        }
 
         public async Task<GetInterviewWithDev> GetInterviewById(int interviewId)
         {
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId)
+                                                                 .Include(i => i.Request)
+                                                                 .ThenInclude(r => r.Company)
                                                                  .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
 
-            var dev = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == interview.DeveloperId)
+            var dev = await _unitOfWork.DeveloperRepository.Get(d => d.DeveloperId == interview.HiredDeveloper.DeveloperId)
                                                            .Include(d => d.User)
                                                            .Include(d => d.Gender)
                                                            .Include(d => d.Level)
@@ -90,6 +78,7 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             return mappedInterview;
         }
 
+
         public async Task<List<GetListInterview>> GetInterviewByRequestIdAsync(int requestId)
         {
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.RequestId == requestId).AsNoTracking()
@@ -99,31 +88,42 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             return mappedInterview;
         }
 
-        public async Task<List<GetListInterview>> GetInterviewByDevId(int devId)
+        public async Task<List<GetListInterview>> GetInterviewByDevId(int devId, SearchInterviewDTO searchKey)
         {
-            var requestIds = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == devId)
-                                                                    .Select(s => s.RequestId)
-                                                                    .ToListAsync();
-            var interviews = await _unitOfWork.InterviewRepository.Get(i => requestIds.Contains((int)i.RequestId!)).ToListAsync();
+            var requestIds = await _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == devId)
+                                                                       .Select(h => h.RequestId)
+                                                                       .ToListAsync();
+            var interviews = _unitOfWork.InterviewRepository.Get(i => requestIds.Contains((int)i.RequestId!))
+                                                                  .Include(r => r.Request)
+                                                                  .ThenInclude(r => r.Company)
+                                                                  .OrderByDescending(r => r.CreatedAt)
+                                                                  .AsQueryable();
+            interviews = interviews.SearchItems(searchKey);
             var mappedInterviews = _mapper.Map<List<GetListInterview>>(interviews);
             return mappedInterviews;
         }
+
 
         public async Task<GetInterviewDTO> CreateInterviewAsync(CreateInterviewDTO requestBody)
         {
             var request = await _unitOfWork.RequestRepository.GetByIdAsync(requestBody.RequestId);
             var dev = await _unitOfWork.DeveloperRepository.GetByIdAsync(requestBody.DeveloperId);
+            var hiredDeveloperId = await _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == dev.DeveloperId &&
+                                                                                       h.RequestId == request.RequestId)
+                                                                           .Select(h => h.HiredDeveloperId)
+                                                                           .SingleOrDefaultAsync();
 
             var newInterview = _mapper.Map<Interview>(requestBody);
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
+                newInterview.HiredDeveloperId = hiredDeveloperId;
+                newInterview.EventId = Guid.NewGuid().ToString();
                 newInterview.InterviewCode = await GenerateUniqueCodeName();
                 newInterview.Status = (int)InterviewStatus.WaitingDevApproval;
                 newInterview.CreatedAt = DateTime.Now;
                 newInterview.NumOfInterviewee = 1;
-                newInterview.EventId = Guid.NewGuid().ToString();
-                await HandleSelectedDevToInterviewing(requestBody.RequestId, requestBody.DeveloperId);
+                await HandleHiredDevToInterviewing(requestBody.RequestId, requestBody.DeveloperId);
                 await _unitOfWork.InterviewRepository.InsertAsync(newInterview);
                 await _unitOfWork.SaveChangesAsync();
                 await _notificationService.SendNotificationAsync(dev.UserId, newInterview.InterviewId, NotificationTypeString.INTERVIEW,
@@ -137,16 +137,18 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             }
 
             var mappedInterview = _mapper.Map<GetInterviewDTO>(newInterview);
+            mappedInterview.DeveloperId = dev.DeveloperId;
             return mappedInterview;
         }
 
+
         public async Task<GetInterviewDTO> UpdateInterviewAsync(int interviewId, UpdateInterviewModel requestBody)
         {
-            if(interviewId != requestBody.InterviewId)
+            if (interviewId != requestBody.InterviewId)
             {
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "InterviewId", "interviewId not match with each other!!");
             }
-            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId && 
+            var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId &&
                                                                            i.Status == (int)InterviewStatus.WaitingDevApproval)
                                                                  .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
@@ -159,15 +161,17 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             return mappedInterview;
         }
 
+
         public async Task<GetInterviewDTO> CancelInterviewAsync(int interviewId)
         {
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == interviewId &&
                                                                           (i.Status == (int)InterviewStatus.WaitingDevApproval ||
                                                                            i.Status == (int)InterviewStatus.Approved))
+                                                                 .Include(i => i.HiredDeveloper)
                                                                  .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
-            
-            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId &&
+
+            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(s => s.DeveloperId == interview.HiredDeveloper.DeveloperId &&
                                                                                s.RequestId == interview.RequestId)
                                                                      .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
@@ -175,34 +179,35 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             interview.Status = (int)InterviewStatus.Cancelled;
             interview.MeetingUrl = null;
             interview.OutlookUrl = null;
-            selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
+            hiredDev.Status = (int)HiredDeveloperStatus.UnderConsideration;
 
             await _unitOfWork.SaveChangesAsync();
 
             var mappedInterview = _mapper.Map<GetInterviewDTO>(interview);
+            mappedInterview.DeveloperId = hiredDev.DeveloperId;
             return mappedInterview;
         }
 
-        private async Task HandleSelectedDevToInterviewing(int requestId, int developerId)
+        private async Task HandleHiredDevToInterviewing(int requestId, int developerId)
         {
-            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == developerId && s.RequestId == requestId)
+            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(s => s.DeveloperId == developerId && s.RequestId == requestId)
                                                                      .SingleOrDefaultAsync()
                   ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.DEV_FIELD, ErrorMessage.DEV_NOT_EXIST);
 
-            selectedDev.Status = (int)SelectedDevStatus.InterviewScheduled;
-            _unitOfWork.SelectedDevRepository.Update(selectedDev);
+            hiredDev.Status = (int)HiredDeveloperStatus.InterviewScheduled;
+            _unitOfWork.HiredDeveloperRepository.Update(hiredDev);
         }
-       
+
 
         public async Task<GetInterviewDTO> ChangeStatusAsync(ChangeStatusDTO requestBody)
         {
             var interview = await _unitOfWork.InterviewRepository.Get(i => i.InterviewId == requestBody.InterviewId &&
                                                                            i.Status == (int)InterviewStatus.WaitingDevApproval)
-                                                                 .Include(i => i.Request)
+                                                                 .Include(i => i.HiredDeveloper)
                                                                  .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
-            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId
-                                                                            && s.RequestId == interview.RequestId)
+            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(s => s.DeveloperId == interview.HiredDeveloper.DeveloperId &&
+                                                                               s.RequestId == interview.RequestId)
                                                                      .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
             using var transaction = _unitOfWork.BeginTransaction();
@@ -218,7 +223,7 @@ namespace WeHire.Infrastructure.Services.InterviewServices
                     interview.RejectionReason = requestBody.RejectionReason;
                     interview.MeetingUrl = null;
                     interview.OutlookUrl = null;
-                    selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
+                    hiredDev.Status = (int)HiredDeveloperStatus.UnderConsideration;
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -232,37 +237,25 @@ namespace WeHire.Infrastructure.Services.InterviewServices
 
             return _mapper.Map<GetInterviewDTO>(interview);
         }
-       
+
 
         public async Task<GetInterviewDTO> FinishInterviewAsync(int interviewId)
         {
             var interview = await _unitOfWork.InterviewRepository.GetByIdAsync(interviewId)
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
-            var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId
-                                                                            && s.RequestId == interview.RequestId)
+            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(s => s.DeveloperId == interview.HiredDeveloper.DeveloperId &&
+                                                                               s.RequestId == interview.RequestId)
                                                                      .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.SELECTING_DEV_FIELD, ErrorMessage.SELECTING_DEV_NOT_EXIST);
-            DateTime interviewDate = interview.DateOfInterview!.Value.Date;
 
-            TimeSpan endTime = interview.EndTime!.Value;
+            interview.Status = (int)InterviewStatus.Completed;
+            hiredDev.Status = (int)HiredDeveloperStatus.WaitingInterview;
+            await _unitOfWork.SaveChangesAsync();
 
-            DateTime combinedDateTime = interviewDate.Add(endTime);
-
-            DateTime currentDateTime = DateTime.Now;
-
-            if (combinedDateTime < currentDateTime)
-            {
-                interview.Status = (int)InterviewStatus.Completed;
-                selectedDev.Status = (int)SelectedDevStatus.WaitingInterview;
-                await _unitOfWork.SaveChangesAsync();
-            }
-            else
-            {
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, "EndTime", "The interview must be out of time before it can finished");
-            }
             var mappedInterview = _mapper.Map<GetInterviewDTO>(interview);
             return mappedInterview;
         }
+
         public async Task<int> GetTotalInterviewsAsync(int? companyId = null)
         {
             IQueryable<Interview> interviewQuery = _unitOfWork.InterviewRepository.Get().Include(i => i.Request);
@@ -295,6 +288,7 @@ namespace WeHire.Infrastructure.Services.InterviewServices
         {
             var interviews = await _unitOfWork.InterviewRepository.Get()
                     .Where(i => i.DateOfInterview.HasValue && i.StartTime.HasValue && i.Status == (int)InterviewStatus.WaitingDevApproval)
+                    .Include(i => i.HiredDeveloper)
                     .ToListAsync();
 
             var filteredInterviews = interviews
@@ -305,14 +299,14 @@ namespace WeHire.Infrastructure.Services.InterviewServices
             {
                 foreach (var interview in filteredInterviews)
                 {
-                    var selectedDev = await _unitOfWork.SelectedDevRepository.Get(s => s.DeveloperId == interview.DeveloperId &&
-                                                                                      s.RequestId == interview.RequestId)
-                                                                                     .SingleOrDefaultAsync();
+                    var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(s => s.DeveloperId == interview.HiredDeveloper.DeveloperId &&
+                                                                                       s.RequestId == interview.RequestId)
+                                                                             .SingleOrDefaultAsync();
                     interview.Status = (int)InterviewStatus.Rejected;
                     interview.RejectionReason = $"WeHire: This developer has not responded to the interview request, please create a new interview.";
                     interview.MeetingUrl = null;
                     interview.OutlookUrl = null;
-                    selectedDev.Status = (int)SelectedDevStatus.UnderConsideration;
+                    hiredDev.Status = (int)HiredDeveloperStatus.UnderConsideration;
                     await _unitOfWork.SaveChangesAsync();
                 }
             }

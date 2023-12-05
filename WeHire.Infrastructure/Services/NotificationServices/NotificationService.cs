@@ -101,6 +101,26 @@ namespace WeHire.Infrastructure.Services.NotificationServices
             await SendMessageToDevice(new List<int> { (int)receiverId }, notiType, content, notiType, routeId);
         }
 
+        public async Task ReadNotification(int notificationId, int userId)
+        {
+            var noti = await _unitOfWork.UserNotificationRepository.Get(n => n.NotificationId == notificationId &&
+                                                                             n.UserId == userId)
+                                                                   .SingleOrDefaultAsync();
+            noti.IsRead = true;
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task UnNewNotification(int userId)
+        {
+            var noti = await _unitOfWork.UserNotificationRepository.Get(n => n.UserId == userId)
+                                                                   .ToListAsync();
+            foreach (var notification in noti)
+            {
+                notification.IsNew = false;
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task SendManagerNotificationAsync(string SenderName, int routeId, string notiType, string content)
         {
             var type = _unitOfWork.NotificationTypeRepository.Get(nt => nt.NotiTypeName.Equals(notiType)).SingleOrDefault();
@@ -186,7 +206,7 @@ namespace WeHire.Infrastructure.Services.NotificationServices
         public async Task<int> GetNotificationCount(int userId)
         {
             var count = await _unitOfWork.UserNotificationRepository.Get(un => un.UserId ==  userId &&
-                                                                         un.IsNew == true)
+                                                                               un.IsNew == true)
                                                                     .CountAsync();
             return count;
         }
@@ -227,5 +247,6 @@ namespace WeHire.Infrastructure.Services.NotificationServices
                 throw;
             }
         }
+      
     }
 }

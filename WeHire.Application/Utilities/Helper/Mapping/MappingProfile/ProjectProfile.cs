@@ -33,6 +33,8 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
             CreateMap<Project, GetProjectDetail>()
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.CompanyName))
                 .ForMember(dest => dest.ProjectTypeName, opt => opt.MapFrom(src => src.ProjectType.ProjectTypeName))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToStringForMeeting(src.StartDate)))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToStringForMeeting(src.EndDate)))
                 .ForMember(dest => dest.StartDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.StartDate)))
                 .ForMember(dest => dest.EndDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.EndDate)))
                 .ForMember(dest => dest.PostedTime, opt => opt.MapFrom(src => PostedTimeCalculateHelper.GetElapsedTimeSinceCreation(src.CreatedAt)))

@@ -13,6 +13,7 @@ using WeHire.Domain.Entities;
 using WeHire.Entity.IRepositories;
 using WeHire.Infrastructure.Services.PayPeriodServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
+using static WeHire.Domain.Enums.PayPeriodEnum;
 
 namespace WeHire.Infrastructure.Services.WorkLogServices
 {
@@ -42,30 +43,58 @@ namespace WeHire.Infrastructure.Services.WorkLogServices
         {
             var workLog = await _unitOfWork.WorkLogRepository.GetByIdAsync(requestBody.WorkLogId)
                     ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "workLog", "WorkLog does not exist!!");
-            var oldWorkLog = new WorkLog();
 
+            var oldWorkLog = new WorkLog();
             oldWorkLog.TimeIn = workLog.TimeIn;
             oldWorkLog.TimeOut = workLog.TimeOut;
+            oldWorkLog.IsPaidLeave = workLog.IsPaidLeave;
 
             var updatedWorkLog = _mapper.Map(requestBody, workLog);
 
-            var paySlip = await _unitOfWork.PaySlipRepository.GetByIdAsync(updatedWorkLog.PaySlipId);
-            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId)
+            var paySlip = await _unitOfWork.PaySlipRepository.GetByIdAsync(updatedWorkLog.PaySlipId)
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "paySlip", "paySlip does not exist!!");
+
+            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId &&
+                                                                           p.Status == (int)PayPeriodStatus.Created)
                                                                  .Include(p => p.PaySlips)
-                                                                 .SingleOrDefaultAsync();
+                                                                 .SingleOrDefaultAsync()
+                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "payPeriod", "payPeriod does not exist!!");
 
             var hourWorkInDayOld = ConvertTime.CalculateTotalWorkTime(oldWorkLog.TimeIn, oldWorkLog.TimeOut);
-            var hourWorkInDayNew = ConvertTime.CalculateTotalWorkTime(updatedWorkLog.TimeIn, updatedWorkLog.TimeOut);
+            var hourWorkInDayNew = 0M;
+
+            if (requestBody.IsPaidLeave == null)
+            {
+                if(oldWorkLog.IsPaidLeave == true)
+                {
+                    hourWorkInDayOld = 8M;
+                }
+                hourWorkInDayNew = ConvertTime.CalculateTotalWorkTime(updatedWorkLog.TimeIn, updatedWorkLog.TimeOut);
+            } 
+            else if((bool)requestBody.IsPaidLeave)
+            {
+                hourWorkInDayNew = 8M;
+                updatedWorkLog.TimeIn = null;
+                updatedWorkLog.TimeOut = null;
+            }
+            else
+            {
+                hourWorkInDayNew = 0M;
+                updatedWorkLog.TimeIn = null;
+                updatedWorkLog.TimeOut = null;
+            }
 
             var totalActualWorkedHours = (paySlip.TotalActualWorkedHours - hourWorkInDayOld) + hourWorkInDayNew;
 
             paySlip.TotalActualWorkedHours = totalActualWorkedHours;
 
-            paySlip.TotalEarnings = _payPeriodService.GetTotalEarningByDeveloperCode(paySlip.HiredDeveloperId, totalActualWorkedHours, paySlip.TotalOvertimeHours); 
+            paySlip.TotalEarnings = _payPeriodService.GetTotalEarningByDeveloperCode(paySlip.HiredDeveloperId, totalActualWorkedHours, paySlip.TotalOvertimeHours);
 
             _unitOfWork.WorkLogRepository.Update(updatedWorkLog);
 
             payPeriod.TotalAmount = payPeriod.PaySlips.Sum(p => p.TotalEarnings ?? 0);
+            payPeriod.UpdatedAt = DateTime.Now;
+
             await _unitOfWork.SaveChangesAsync();
 
             return new WorkLogResponseModel
