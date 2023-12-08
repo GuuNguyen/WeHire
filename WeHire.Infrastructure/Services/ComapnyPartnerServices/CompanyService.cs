@@ -126,9 +126,12 @@ namespace WeHire.Infrastructure.Services.ComapnyPartnerServices
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, "Company is existed");
         }
 
-        public Task DeleteCompanyAsync(int companyId)
+        public async Task DeleteCompanyAsync(int companyId)
         {
-            throw new NotImplementedException();
+            var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
+            company.Status = (int)CompanyStatus.Inactive;
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<int> GetTotalItemAsync()

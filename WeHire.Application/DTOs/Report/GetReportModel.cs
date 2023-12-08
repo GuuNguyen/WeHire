@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WeHire.Application.DTOs.Developer;
 
 namespace WeHire.Application.DTOs.Report
 {
@@ -22,5 +23,6 @@ namespace WeHire.Application.DTOs.Report
         public string ResponseContent { get; set; }
         public string PostedTime { get; set; }
         public string StatusString { get; set; }
+        public GetDeveloperInProject DeveloperInProject { get; set; }
     }
 }

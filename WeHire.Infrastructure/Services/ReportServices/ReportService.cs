@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.Report;
 using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.Helper.Pagination;
@@ -80,8 +81,15 @@ namespace WeHire.Infrastructure.Services.ReportServices
                                                       .SingleOrDefaultAsync()
             ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Report", "Report does not exist!!");
 
-            var mappedReports = _mapper.Map<GetReportModel>(report);
-            return mappedReports;
+            var developer = await _unitOfWork.HiredDeveloperRepository.Get(h => h.HiredDeveloperId == report.HiredDeveloperId)
+                                                                    .Include(h => h.Developer.HiredDevelopers)
+                                                                    .ThenInclude(h => h.Contract)
+                                                                    .Include(s => s.Developer.User)
+                                                                    .Select(s => s.Developer)
+                                                                    .SingleOrDefaultAsync();
+            var mappedReport = _mapper.Map<GetReportModel>(report);
+            mappedReport.DeveloperInProject = _mapper.Map<GetDeveloperInProject>(developer);
+            return mappedReport;
         }
 
 
@@ -100,8 +108,8 @@ namespace WeHire.Infrastructure.Services.ReportServices
         public async Task<GetReport> CreateReport(CreateReportModel requestModel)
         {
             var hiredDeveloper = await _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId ==  requestModel.DeveloperId &&
-                                                                               h.ProjectId == requestModel.ProjectId &&
-                                                                               h.Status == (int)HiredDeveloperStatus.Working)
+                                                                                h.ProjectId == requestModel.ProjectId &&
+                                                                                h.Status == (int)HiredDeveloperStatus.Working)
                                                                      .SingleOrDefaultAsync()
             ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", "HiredDeveloper does not exist!!");
 

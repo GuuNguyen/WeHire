@@ -73,6 +73,7 @@ namespace WeHire.Infrastructure.Services.AccountServices
                     UserId = user.UserId,
                     DevId = devId,
                     Role = user.Role.RoleName,
+                    AccessTokenExp = DateTime.Now.AddHours(4),
                     Expiration = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken
@@ -84,6 +85,7 @@ namespace WeHire.Infrastructure.Services.AccountServices
                 {
                     UserId = user.UserId,
                     Role = user.Role.RoleName,
+                    AccessTokenExp = DateTime.Now.AddHours(4),
                     Expiration = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken

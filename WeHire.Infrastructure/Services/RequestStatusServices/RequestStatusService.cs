@@ -38,8 +38,8 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
 
         public async Task<GetRequestDTO> HandleWaitingStatusAsync(WaitingStatus requestBody)
         {
-            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId
-                                                               && r.Status == (int)HiringRequestStatus.WaitingApproval)
+            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId &&
+                                                                       r.Status == (int)HiringRequestStatus.WaitingApproval)
                                                              .Include(r => r.Project)
                                                              .ThenInclude(p => p.Company)
                                                              .SingleOrDefaultAsync();
@@ -76,7 +76,7 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
                                                              .Include(r => r.Project)
                                                              .ThenInclude(r => r.Company)
                                                              .Include(r => r.HiredDevelopers)
-                                                             .ThenInclude(r => r.Developer)
+                                                             .ThenInclude(h => h.Developer)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
             
@@ -105,8 +105,8 @@ namespace WeHire.Infrastructure.Services.RequestStatusServices
 
         public async Task<GetRequestDTO> HandleExpiredStatusAsync(ExpiredStatus requestBody)
         {
-            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId
-                                                               && r.Status == (int)HiringRequestStatus.Expired)
+            var request = await _unitOfWork.RequestRepository.Get(r => r.RequestId == requestBody.RequestId &&
+                                                                       r.Status == (int)HiringRequestStatus.Expired)
                                                              .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
             if (requestBody.NewDuration <= DateTime.Now)

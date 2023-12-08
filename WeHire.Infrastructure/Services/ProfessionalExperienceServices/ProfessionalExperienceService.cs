@@ -27,6 +27,7 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
             _mapper = mapper;
         }
 
+
         public List<GetPEByAdmin> GetProfessionalExperiencesAsync(PagingQuery query)
         {
             var profess = _unitOfWork.ProfessionalExperienceRepository.GetAll().Include(p => p.Developer).ThenInclude(d => d.User).AsQueryable();
@@ -35,6 +36,7 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
             var mappedProfess = _mapper.Map<List<GetPEByAdmin>>(profess);
             return mappedProfess;
         }
+
 
         public async Task<List<GetProfessionalExperience>> GetProfessionalExperiencesByDevIdAsync(int developerId)
         {
@@ -46,6 +48,7 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
             var mappedPro = _mapper.Map<List<GetProfessionalExperience>>(pros);
             return mappedPro;
         }
+
 
         public async Task<GetProfessionalExperience> CreateProfessionalExperienceAsync(CreateProfessionalExperience requestBody)
         {
@@ -59,6 +62,7 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
             return mappedPro;
         }
        
+
         public async Task<GetProfessionalExperience> UpdateProfessionalExperienceAsync(int professionalExperienceId, UpdateProfessionalExperience requestBody)
         {
             if(professionalExperienceId != requestBody.ProfessionalExperienceId)
@@ -74,6 +78,7 @@ namespace WeHire.Infrastructure.Services.ProfessionalExperienceServices
             var mappedProfess = _mapper.Map<GetProfessionalExperience>(updatedProfess);
             return mappedProfess;
         }
+
 
         public async Task DeleteProfessionalExperienceAsync(int professionalExperienceId)
         {

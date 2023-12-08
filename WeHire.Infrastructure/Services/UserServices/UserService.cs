@@ -184,24 +184,6 @@ namespace WeHire.Infrastructure.Services.UserServices
             return mappedUser;
         }
 
-        public async Task<GetUserDetail> ChangeRoleAsync(ChangeRoleDTO newRole)
-        {
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(newRole.UserId);
-
-            if (user == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
-
-            if (!Enum.IsDefined(typeof(RoleEnum), newRole.Role))
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.STATUS_FIELD, $"Role {newRole.Role} is not exist!");
-
-            user.RoleId = newRole.Role;
-            _unitOfWork.UserRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync();
-
-            var mappedUser = _mapper.Map<GetUserDetail>(user);
-            return mappedUser;
-        }
-
         public async Task<int> GetTotalItemAsync()
         {
             var total = await _unitOfWork.UserRepository.GetAll().CountAsync();

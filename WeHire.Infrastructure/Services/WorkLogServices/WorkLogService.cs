@@ -54,8 +54,7 @@ namespace WeHire.Infrastructure.Services.WorkLogServices
             var paySlip = await _unitOfWork.PaySlipRepository.GetByIdAsync(updatedWorkLog.PaySlipId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "paySlip", "paySlip does not exist!!");
 
-            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId &&
-                                                                           p.Status == (int)PayPeriodStatus.Created)
+            var payPeriod = await _unitOfWork.PayPeriodRepository.Get(p => p.PayPeriodId == paySlip.PayPeriodId )
                                                                  .Include(p => p.PaySlips)
                                                                  .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "payPeriod", "payPeriod does not exist!!");
@@ -79,6 +78,10 @@ namespace WeHire.Infrastructure.Services.WorkLogServices
             }
             else
             {
+                if(oldWorkLog.IsPaidLeave == true)
+                {
+                    hourWorkInDayOld = 8M;
+                }
                 hourWorkInDayNew = 0M;
                 updatedWorkLog.TimeIn = null;
                 updatedWorkLog.TimeOut = null;

@@ -38,7 +38,7 @@ namespace WeHire.Application.Utilities.Helper
                 issuer: _config["JWT:Issuer"],
                 audience: _config["JWT:Audience"],
                 notBefore: DateTime.Now,
-                expires: DateTime.Now.AddHours(2),
+                expires: DateTime.Now.AddHours(4),
                 signingCredentials: signingCredentials,
                 claims: claims
             );

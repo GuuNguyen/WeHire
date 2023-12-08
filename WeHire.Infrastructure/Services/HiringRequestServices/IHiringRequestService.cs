@@ -17,7 +17,7 @@ namespace WeHire.Infrastructure.Services.HiringRequestServices
         public Task<GetRequestDTO> CreateRequestAsync(CreateRequestDTO requestBody);
         public Task<GetRequestDTO> UpdateRequestAsync(int requestId, UpdateRequestDTO requestBody);
         public Task<GetRequestDTO> CloneARequestAsync(int requestId);
-        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, int status, string? searchKeyString, SearchHiringRequestDTO searchKey);
+        public List<GetAllFieldRequest> GetRequestsByDevId(int devId, string? searchKeyString, SearchHiringRequestDTO searchKey);
         public Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId, PagingQuery query, string? searchKeyString, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
         public Task<List<GetAllFieldRequest>> GetRequestsByProjectId(int projectId, PagingQuery query, string? searchKeyString, SearchHiringRequestDTO searchKey, SearchExtensionDTO searchExtensionKey);
         public Task HandleDeveloperAfterCloseHiringRequest(HiringRequest request);

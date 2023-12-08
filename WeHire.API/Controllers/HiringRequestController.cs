@@ -63,11 +63,10 @@ namespace WeHire.API.Controllers
         [HttpGet("ByDev")]
         [ProducesResponseType(typeof(ApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public IActionResult GetRequestByDevId([FromQuery] int devId, 
-                                               [FromQuery] int status, 
                                                [FromQuery] string? searchKeyString, 
                                                [FromQuery] SearchHiringRequestDTO searchKey)
         {
-            var result =  _requestService.GetRequestsByDevId(devId, status, searchKeyString, searchKey);
+            var result =  _requestService.GetRequestsByDevId(devId, searchKeyString, searchKey);
 
             return Ok(new ApiResponse<List<GetAllFieldRequest>>()
             {
