@@ -9,9 +9,9 @@ namespace WeHire.Application.DTOs.User
 {
     public class RefreshTokenModel
     {
-        [Required]
+        [Required(ErrorMessage = "AccessToken is required")]
         public string AccessToken { get; set; }
-        [Required]
+        [Required(ErrorMessage = "RefreshToken is required")]
         public string RefreshToken { get; set; }
     }
 }

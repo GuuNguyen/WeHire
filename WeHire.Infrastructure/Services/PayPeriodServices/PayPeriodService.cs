@@ -93,11 +93,19 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
             if (isExistPayPeriod)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "PayPeriod", "PayPeriod is exist for this month, please update if you want to change!");
 
-            var anyDevWorked = project.HiredDevelopers.Where(h => (h.Contract.FromDate >= payPeriodDuration.StartDate ||
-                                                                   h.Contract.ToDate <= payPeriodDuration.EndDate) &&
-                                                                   h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
-                                                                   h.Status == (int)HiredDeveloperStatus.Working)
+            var hiredDeveloper = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working)
                                                        .ToList();
+
+            if (!hiredDeveloper.Any())
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", $"There are no developers working in this project!!");
+            }
+
+            var anyDevWorked = hiredDeveloper.Where(h => (h.Contract.FromDate >= payPeriodDuration.StartDate ||
+                                                          h.Contract.ToDate <= payPeriodDuration.EndDate) &&
+                                                          h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
+                                                          h.Status == (int)HiredDeveloperStatus.Working)
+                                             .ToList();
 
             if (!anyDevWorked.Any())
             {
@@ -113,7 +121,7 @@ namespace WeHire.Infrastructure.Services.PayPeriodServices
                 TotalAmount = 0,
                 CreatedAt = DateTime.Now,
                 Status = (int)PayPeriodStatus.Created,
-                PaySlips = project.HiredDevelopers
+                PaySlips = hiredDeveloper
                 .Where(p => p.Contract.FromDate < payPeriodDuration.EndDate && p.Contract.ToDate > payPeriodDuration.StartDate)
                 .Select(p =>
                 {

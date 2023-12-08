@@ -70,7 +70,7 @@ namespace WeHire.API.Controllers
         }
 
         [HttpPut]
-        [ProducesResponseType(typeof(ApiResponse<GetCompanyDTO>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<GetCompanyDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateCompanyAsync(int companyId,[FromForm] UpdateCompanyDTO requestBody)
         {
             var result = await _companyService.UpdateCompanyAsync(companyId, requestBody);
@@ -80,6 +80,15 @@ namespace WeHire.API.Controllers
                 Code = StatusCodes.Status201Created,
                 Data = result,
             });
+        }
+
+        [HttpDelete("{companyId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteCompanyAsync(int companyId)
+        {
+            await _companyService.DeleteCompanyAsync(companyId);
+
+            return NoContent();
         }
     }
 }

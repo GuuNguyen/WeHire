@@ -241,7 +241,6 @@ namespace WeHire.Infrastructure.Services.ContractServices
             var hiredDeveloper = await _unitOfWork.HiredDeveloperRepository.Get(s => s.RequestId == requestBody.RequestId &&
                                                                                      s.DeveloperId == requestBody.DeveloperId &&
                                                                                     (s.Status == (int)HiredDeveloperStatus.UnderConsideration ||
-                                                                                     s.Status == (int)HiredDeveloperStatus.WaitingInterview ||
                                                                                      s.Status == (int)HiredDeveloperStatus.InterviewScheduled))
                                                                      .Include(s => s.Developer)
                                                                      .SingleOrDefaultAsync()
@@ -352,10 +351,14 @@ namespace WeHire.Infrastructure.Services.ContractServices
              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", "Hired developer does not exist!");
 
             hiredDeveloper.Status = (int)HiredDeveloperStatus.ContractFailed;
+            hiredDeveloper.Developer.Status = (int)DeveloperStatus.Available;
             contract.Status = (int)ContractStatus.Failed;
 
             var hrId = hiredDeveloper.Project.Company.UserId;
             await _notificationService.SendNotificationAsync(hrId, contract.ContractId, NotificationTypeString.CONTRACT,
+                                $"Contract  #{contract.ContractCode} has been failed!");
+
+            await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, contract.ContractId, NotificationTypeString.CONTRACT,
                                 $"Contract  #{contract.ContractCode} has been failed!");
 
             await _unitOfWork.SaveChangesAsync();
@@ -379,11 +382,15 @@ namespace WeHire.Infrastructure.Services.ContractServices
                                                                     .SingleOrDefaultAsync();
 
                     hiredDeveloper.Status = (int)HiredDeveloperStatus.ContractFailed;
+                    hiredDeveloper.Developer.Status = (int)DeveloperStatus.Available;
                     contract.Status = (int)ContractStatus.Failed;
 
                     var hrId = hiredDeveloper.Project.Company.UserId;
                     await _notificationService.SendNotificationAsync(hrId, contract.ContractId, NotificationTypeString.CONTRACT,
                                         $"Contract  #{contract.ContractCode} has been failed!");
+
+                    await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, contract.ContractId, NotificationTypeString.CONTRACT,
+                                $"Contract  #{contract.ContractCode} has been failed!");
 
                     await _unitOfWork.SaveChangesAsync();
                 }

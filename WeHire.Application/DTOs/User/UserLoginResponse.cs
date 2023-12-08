@@ -10,6 +10,7 @@ namespace WeHire.Application.DTOs.User
     {
         public int UserId { get; set; }
         public string Role { get; set; }
+        public DateTime AccessTokenExp { get; set; }
         public DateTime Expiration { get; set; }
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }

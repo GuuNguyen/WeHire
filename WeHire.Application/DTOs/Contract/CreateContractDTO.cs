@@ -9,17 +9,17 @@ namespace WeHire.Application.DTOs.Contract
 {
     public class CreateContractDTO
     {
-        [Required]
+        [Required(ErrorMessage = "RequestId is required")]
         public int RequestId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "DeveloperId is required")]
         public int DeveloperId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "FromDate is required")]
         public DateTime FromDate { get; set; }
-        [Required]
+        [Required(ErrorMessage = "ToDate is required")]
         public DateTime? ToDate { get; set; }
-        [Required]
+        [Required(ErrorMessage = "LegalRepresentation is required")]
         public string LegalRepresentation { get; set; }
-        [Required]
+        [Required(ErrorMessage = "LegalRepresentationPosition is required")]
         public string LegalRepresentationPosition { get; set; }
     }
 }

@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Domain.Entities;
+using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 
 namespace WeHire.Application.DTOs.HiringRequest
 {
     public class CreateRequestDTO
     {
-        public int? CompanyId { get; set; }
-        public int? ProjectId { get; set; }
+        [Required(ErrorMessage = "CompanyId is required")]
+        public int CompanyId { get; set; }
+        [Required(ErrorMessage = "ProjectId is required")]
+        public int ProjectId { get; set; }
         public string JobTitle { get; set; }
         public string? JobDescription { get; set; }
         public int? NumberOfDev { get; set; }

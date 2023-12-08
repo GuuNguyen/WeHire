@@ -14,9 +14,6 @@ namespace WeHire.Domain.Enums
             [Description("Under Consideration")]
             UnderConsideration = 1,
 
-            [Description("Waiting Interview")]
-            WaitingInterview = 2,
-
             [Description("Interview Scheduled")]
             InterviewScheduled = 3,
 

@@ -29,6 +29,10 @@ namespace WeHire.Application.DTOs.HiringRequest
         public string LevelRequireName { get; set; }
         public List<string> SkillRequireStrings { get; set; }
         public string StatusString { get; set; }
-        public string PostedTime { get; set; }           
+        public string PostedTime { get; set; }
+        public DateTime? ExpiredAt { get; set; }
+        public bool? IsExpiredOnce { get; set; }
+        public string RejectionReason { get; set; }
+
     }
 }

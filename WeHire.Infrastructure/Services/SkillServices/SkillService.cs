@@ -45,6 +45,7 @@ namespace WeHire.Infrastructure.Services.SkillServices
         {
             if (requestBody == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.REQUEST_BODY, ErrorMessage.NULL_REQUEST_BODY);
+            
             var newSkill = _mapper.Map<Skill>(requestBody);
             newSkill.Status = (int)SkillStatus.Active;
 

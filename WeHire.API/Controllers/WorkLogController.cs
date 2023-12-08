@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Contract;
 using WeHire.Application.DTOs.WorkLog;
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _workLogService = workLogService;
         }
 
+        [Authorize(Roles = "Admin, Manager, HR")]
         [HttpGet("ByPaySlip/{paySlipId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetWorkLogModel>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetWorkLogByPaySlipId(int paySlipId)
@@ -30,6 +32,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin, Manager, HR")]
         [HttpPut]
         [ProducesResponseType(typeof(ApiResponse<WorkLogResponseModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateWorkLog(UpdateWorkLogModel requestBody)
