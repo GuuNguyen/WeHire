@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
-using WeHire.Infrastructure.Services.EducationServices;
+using WeHire.Application.Services.EducationServices;
 using WeHire.Application.DTOs.Education;
 using WeHire.Application.Utilities.Helper.Pagination;
 

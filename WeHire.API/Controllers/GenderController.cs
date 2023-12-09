@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.DTOs.CompanyPartner;
-using WeHire.Infrastructure.Services.GenderServices;
+using WeHire.Application.Services.GenderServices;
 using WeHire.Application.DTOs.Gender;
 
 namespace WeHire.API.Controllers

@@ -4,7 +4,7 @@ using WeHire.Application.DTOs.HiringRequest;
 using WeHire.Application.DTOs.User;
 using WeHire.Application.Utilities.GlobalVariables;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.DeveloperServices;
+using WeHire.Application.Services.DeveloperServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

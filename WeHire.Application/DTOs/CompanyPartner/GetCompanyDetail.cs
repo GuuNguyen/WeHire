@@ -12,6 +12,7 @@ namespace WeHire.Application.DTOs.CompanyPartner
         public string CompanyName { get; set; }
         public string CompanyEmail { get; set; }
         public string PhoneNumber { get; set; }
+        public string AboutCompany { get; set; }
         public string Address { get; set; }
         public int? Rating { get; set; }
         public string CompanyImage { get; set; }

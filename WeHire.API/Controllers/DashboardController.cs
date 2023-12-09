@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Contract;
 using WeHire.Application.DTOs.Dashboard;
 using WeHire.Application.DTOs.HiringRequest;
-using WeHire.Infrastructure.Services.DashboardServices;
+using WeHire.Application.Services.DashboardServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

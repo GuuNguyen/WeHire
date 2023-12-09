@@ -5,7 +5,7 @@ using WeHire.Application.DTOs.Project;
 using WeHire.Application.DTOs.ProjectType;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.ProjectTypeServices;
+using WeHire.Application.Services.ProjectTypeServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

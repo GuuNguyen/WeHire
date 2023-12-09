@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.UserDevice;
-using WeHire.Infrastructure.Services.UserDeviceServices;
+using WeHire.Application.Services.UserDeviceServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

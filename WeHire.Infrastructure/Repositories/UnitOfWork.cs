@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Domain.Entities;
-using WeHire.Entity.IRepositories;
+using WeHire.Infrastructure.IRepositories;
 
-namespace WeHire.Entity.Repositories
+namespace WeHire.Infrastructure.Repositories
 {
     public class UnitOfWork : IUnitOfWork
     {

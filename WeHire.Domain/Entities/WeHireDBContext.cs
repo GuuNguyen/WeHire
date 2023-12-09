@@ -64,14 +64,14 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<CompanyPartner>(entity =>
             {
                 entity.HasKey(e => e.CompanyId)
-                    .HasName("PK__CompanyP__2D971CACD34C02AC");
+                    .HasName("PK__CompanyP__2D971CACC5521682");
 
                 entity.ToTable("CompanyPartner");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E385503B547")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__CompanyP__85FB4E381C1F5962")
                     .IsUnique();
 
-                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DBFBE5FDEB")
+                entity.HasIndex(e => e.CompanyEmail, "UQ__CompanyP__A1DB68DB6C6288B9")
                     .IsUnique();
 
                 entity.Property(e => e.Address).HasMaxLength(300);
@@ -106,7 +106,7 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("Contract");
 
-                entity.HasIndex(e => e.ContractCode, "UQ__Contract__CBECF83339826408")
+                entity.HasIndex(e => e.ContractCode, "UQ__Contract__CBECF833172B71B1")
                     .IsUnique();
 
                 entity.Property(e => e.BasicSalary).HasColumnType("money");
@@ -136,7 +136,7 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("Developer");
 
-                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D5F4CD5D3B")
+                entity.HasIndex(e => e.CodeName, "UQ__Develope__404488D515B84060")
                     .IsUnique();
 
                 entity.Property(e => e.AverageSalary).HasColumnType("money");
@@ -169,7 +169,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<DeveloperSkill>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.SkillId })
-                    .HasName("PK__Develope__B3F245E977AA6474");
+                    .HasName("PK__Develope__B3F245E974A68994");
 
                 entity.ToTable("DeveloperSkill");
 
@@ -189,7 +189,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<DeveloperType>(entity =>
             {
                 entity.HasKey(e => new { e.DeveloperId, e.TypeId })
-                    .HasName("PK__Develope__9B1EBCCAC7192258");
+                    .HasName("PK__Develope__9B1EBCCA865BEEC6");
 
                 entity.ToTable("DeveloperType");
 
@@ -273,11 +273,11 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<HiringRequest>(entity =>
             {
                 entity.HasKey(e => e.RequestId)
-                    .HasName("PK__HiringRe__33A8517A63B6BDCC");
+                    .HasName("PK__HiringRe__33A8517A3FF935EC");
 
                 entity.ToTable("HiringRequest");
 
-                entity.HasIndex(e => e.RequestCode, "UQ__HiringRe__CBAB82F66B88DE20")
+                entity.HasIndex(e => e.RequestCode, "UQ__HiringRe__CBAB82F67E7214DD")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -328,10 +328,10 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("Interview");
 
-                entity.HasIndex(e => e.EventId, "UQ__Intervie__7944C81148A26FC0")
+                entity.HasIndex(e => e.EventId, "UQ__Intervie__7944C8118FFAFFF8")
                     .IsUnique();
 
-                entity.HasIndex(e => e.InterviewCode, "UQ__Intervie__D3D4CCDC8E8467CF")
+                entity.HasIndex(e => e.InterviewCode, "UQ__Intervie__D3D4CCDCD4B0D7D9")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -392,7 +392,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<NotificationType>(entity =>
             {
                 entity.HasKey(e => e.NotiTypeId)
-                    .HasName("PK__Notifica__54F5A30188C0C8B3");
+                    .HasName("PK__Notifica__54F5A3010D300C8B");
 
                 entity.ToTable("NotificationType");
 
@@ -405,7 +405,7 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("PayPeriod");
 
-                entity.HasIndex(e => e.PayPeriodCode, "UQ__PayPerio__DE9A39451232BC6D")
+                entity.HasIndex(e => e.PayPeriodCode, "UQ__PayPerio__DE9A3945C3C3775B")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -471,7 +471,7 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("Project");
 
-                entity.HasIndex(e => e.ProjectCode, "UQ__Project__2F3A4948DB6FD40F")
+                entity.HasIndex(e => e.ProjectCode, "UQ__Project__2F3A49483E64037A")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -562,7 +562,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<SkillRequire>(entity =>
             {
                 entity.HasKey(e => new { e.RequestId, e.SkillId })
-                    .HasName("PK__SkillReq__5E5258622CDDF852");
+                    .HasName("PK__SkillReq__5E525862394E7EA8");
 
                 entity.ToTable("SkillRequire");
 
@@ -627,10 +627,10 @@ namespace WeHire.Domain.Entities
             {
                 entity.ToTable("User");
 
-                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E3859A4E0B3")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__User__85FB4E38D4E6FEBD")
                     .IsUnique();
 
-                entity.HasIndex(e => e.Email, "UQ__User__A9D10534AE22CF20")
+                entity.HasIndex(e => e.Email, "UQ__User__A9D10534AA7B1A04")
                     .IsUnique();
 
                 entity.Property(e => e.ConfirmationCode).HasMaxLength(100);
@@ -682,7 +682,7 @@ namespace WeHire.Domain.Entities
             modelBuilder.Entity<UserNotification>(entity =>
             {
                 entity.HasKey(e => new { e.NotificationId, e.UserId })
-                    .HasName("PK__UserNoti__F1B7A2D607D9DC31");
+                    .HasName("PK__UserNoti__F1B7A2D61A87D868");
 
                 entity.ToTable("UserNotification");
 

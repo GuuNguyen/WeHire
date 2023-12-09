@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using WeHire.API.Configurations;
 using WeHire.Application.Utilities.Middleware;
 using WeHire.Domain.Entities;
-using WeHire.Infrastructure;
+using WeHire.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 

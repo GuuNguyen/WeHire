@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Interview;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.InterviewServices;
+using WeHire.Application.Services.InterviewServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

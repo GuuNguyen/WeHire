@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.DTOs.Contract;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.TransactionServices;
+using WeHire.Application.Services.TransactionServices;
 using WeHire.Application.DTOs.Transaction;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 

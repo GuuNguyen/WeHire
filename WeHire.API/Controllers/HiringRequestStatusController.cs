@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiringRequest;
-using WeHire.Infrastructure.Services.RequestStatusServices;
+using WeHire.Application.Services.RequestStatusServices;
 using static WeHire.Application.DTOs.HiringRequest.ChangeStatusDTO;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Notification;
-using WeHire.Infrastructure.Services.NotificationServices;
+using WeHire.Application.Services.NotificationServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.CompanyPartner;
 using WeHire.Application.DTOs.Skill;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.SkillServices;
+using WeHire.Application.Services.SkillServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

@@ -6,10 +6,10 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using WeHire.Domain.Entities;
-using WeHire.Entity.IRepositories;
+using WeHire.Infrastructure.IRepositories;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
-namespace WeHire.Entity.Repositories
+namespace WeHire.Infrastructure.Repositories
 {
     public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
     {

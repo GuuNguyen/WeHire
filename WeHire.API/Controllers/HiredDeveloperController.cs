@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiredDeveloper;
-using WeHire.Infrastructure.Services.HiredDeveloperServices;
+using WeHire.Application.Services.HiredDeveloperServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers
