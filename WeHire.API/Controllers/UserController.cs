@@ -4,7 +4,7 @@ using WeHire.Application.DTOs.User;
 using WeHire.Application.Utilities.GlobalVariables;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.UserServices;
+using WeHire.Application.Services.UserServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

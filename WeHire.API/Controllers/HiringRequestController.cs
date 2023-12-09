@@ -5,7 +5,7 @@ using WeHire.Application.DTOs.HiringRequest;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.EnumToList;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.HiringRequestServices;
+using WeHire.Application.Services.HiringRequestServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

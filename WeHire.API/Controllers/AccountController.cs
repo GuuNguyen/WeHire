@@ -4,8 +4,8 @@ using System.Net;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Skill;
 using WeHire.Application.DTOs.User;
-using WeHire.Infrastructure.Services.AccountServices;
-using WeHire.Infrastructure.Services.UserServices;
+using WeHire.Application.Services.AccountServices;
+using WeHire.Application.Services.UserServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

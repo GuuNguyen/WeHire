@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Role;
-using WeHire.Infrastructure.Services.RoleServices;
+using WeHire.Application.Services.RoleServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

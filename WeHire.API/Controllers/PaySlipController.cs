@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
-using WeHire.Infrastructure.Services.PaymentServices;
-using WeHire.Infrastructure.Services.PaySlipServices;
+using WeHire.Application.Services.PaymentServices;
+using WeHire.Application.Services.PaySlipServices;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.DTOs.PaySlip;

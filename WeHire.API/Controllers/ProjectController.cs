@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
-using WeHire.Infrastructure.Services.ProjectServices;
+using WeHire.Application.Services.ProjectServices;
 using WeHire.Application.DTOs.Project;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
@@ -44,7 +44,7 @@ namespace WeHire.API.Controllers
 
         [HttpGet("ByCompany/{companyId}")]
         [ProducesResponseType(typeof(PagedApiResponse<GetListProjectDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetListProjectAsync(int companyId, 
+        public async Task<IActionResult> GetListProjectByCompanyAsync(int companyId, 
                                                             [FromQuery] PagingQuery query,
                                                             [FromQuery] string? searchKeyString,
                                                             [FromQuery] SearchProjectDTO searchKey)

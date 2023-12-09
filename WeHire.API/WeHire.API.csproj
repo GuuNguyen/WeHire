@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WeHire.Infrastructure\WeHire.Infrastructure.csproj" />
+    <ProjectReference Include="..\WeHire.Application\WeHire.Application.csproj" />
   </ItemGroup>
 
 </Project>

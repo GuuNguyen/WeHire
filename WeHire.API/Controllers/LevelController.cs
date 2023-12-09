@@ -4,7 +4,7 @@ using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Skill;
 using WeHire.Application.Utilities.Helper.Pagination;
-using WeHire.Infrastructure.Services.LevelServices;
+using WeHire.Application.Services.LevelServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

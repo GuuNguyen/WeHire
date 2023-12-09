@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Contract;
 using WeHire.Application.DTOs.ReportType;
-using WeHire.Infrastructure.Services.ReportTypeServices;
+using WeHire.Application.Services.ReportTypeServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers

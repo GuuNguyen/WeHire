@@ -19,6 +19,7 @@ namespace WeHire.Application.DTOs.CompanyPartner
         public string CompanyEmail { get; set; }
         [Required(ErrorMessage = "PhoneNumber is required")]
         public string PhoneNumber { get; set; }
+        public string? AboutCompany { get; set; }
         [Required(ErrorMessage = "Address is required")]
         public string Address { get; set; }
         [Required(ErrorMessage = "Country is required")]

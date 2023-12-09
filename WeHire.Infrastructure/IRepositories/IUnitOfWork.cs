@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using WeHire.Domain.Entities;
 using Type = WeHire.Domain.Entities.Type;
 
-namespace WeHire.Entity.IRepositories
+namespace WeHire.Infrastructure.IRepositories
 {
     public interface IUnitOfWork : IDisposable
     {

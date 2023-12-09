@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
-using WeHire.Infrastructure.Services.PayPeriodServices;
-using WeHire.Infrastructure.Services.ExcelServices;
+using WeHire.Application.Services.PayPeriodServices;
+using WeHire.Application.Services.ExcelServices;
 using WeHire.Application.DTOs.File;
 using WeHire.Application.DTOs.PayPeriod;
 

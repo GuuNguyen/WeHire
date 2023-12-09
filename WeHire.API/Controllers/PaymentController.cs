@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Payment;
-using WeHire.Infrastructure.Services.PaymentServices;
+using WeHire.Application.Services.PaymentServices;
 using static System.Net.WebRequestMethods;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Contract;
 using WeHire.Application.DTOs.WorkLog;
-using WeHire.Infrastructure.Services.WorkLogServices;
+using WeHire.Application.Services.WorkLogServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 
 namespace WeHire.API.Controllers
