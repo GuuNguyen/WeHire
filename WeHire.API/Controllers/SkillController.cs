@@ -5,6 +5,7 @@ using WeHire.Application.DTOs.Skill;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.SkillServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _skillService = skillService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetSkillDetail>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllSkillAsync([FromQuery] PagingQuery query,
@@ -39,9 +41,10 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetSkillDetail>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateEmployeeAsync(CreateSkillDTO requestBody)
+        public async Task<IActionResult> CreateSkillAsync(CreateSkillDTO requestBody)
         {
             var result = await _skillService.CreateSkillAsync(requestBody);
 
@@ -52,6 +55,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateSkillAsync(UpdateSkillModel requestBody)
@@ -64,6 +68,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{skillId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteSkillAsync(int skillId)

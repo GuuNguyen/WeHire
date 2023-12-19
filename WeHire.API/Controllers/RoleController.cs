@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.DTOs.Role;
@@ -17,7 +18,6 @@ namespace WeHire.API.Controllers
         {
             _roleService = roleService;
         }
-
 
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetRoleDTO>>), StatusCodes.Status200OK)]

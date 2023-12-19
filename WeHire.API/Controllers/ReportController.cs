@@ -6,6 +6,7 @@ using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.ReportServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -20,11 +21,14 @@ namespace WeHire.API.Controllers
             _reportService = reportService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetReportModel>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllReport([FromQuery] PagingQuery query, [FromQuery] SearchReportModel searchKey)
         {
-            var result = _reportService.GetAllReport(query, searchKey);
+            var result = _reportService.GetAllReport(searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _reportService.GetTotalItem()
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -37,19 +41,22 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
-        
+
+        [Authorize]
         [HttpGet("ByCompany/{companyId}")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetReportModel>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllReportByProject( int companyId,
+        public async Task<IActionResult> GetAllReportByCompany( int companyId,
                                                                [FromQuery] PagingQuery query, 
                                                                [FromQuery] SearchReportModel searchKey)
         {
-            var result = _reportService.GetReportByProject(companyId, query, searchKey);
+            var result = _reportService.GetReportByCompany(companyId, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _reportService.GetTotalItem(companyId)
-                                                  : result.Count;
+                                                         : result.Count;
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,
@@ -60,10 +67,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("{reportId}")]
         [ProducesResponseType(typeof(ApiResponse<GetReportModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetReportById(int reportId)
@@ -76,6 +84,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetReport>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateReport(CreateReportModel requestBody)
@@ -88,6 +97,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost("Reply")]
         [ProducesResponseType(typeof(ApiResponse<GetReport>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ReplyReport(ReplyReport requestBody)
@@ -100,6 +110,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("Confirm/{reportId}")]
         [ProducesResponseType(typeof(ApiResponse<GetReport>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ApproveReport(int reportId)

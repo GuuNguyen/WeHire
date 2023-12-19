@@ -17,6 +17,8 @@ using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.PayPeriodEnum;
 using WeHire.Infrastructure.IRepositories;
+using static WeHire.Domain.Enums.ProjectEnum;
+using static WeHire.Domain.Enums.ContractEnum;
 
 namespace WeHire.Application.Services.PayPeriodServices
 {
@@ -59,7 +61,7 @@ namespace WeHire.Application.Services.PayPeriodServices
             var totalDue = payPeriod.TotalAmount + commissionAmount;
 
             var developerFullNames = new List<string>();
-            foreach(var paySlip in payPeriod.PaySlips)
+            foreach (var paySlip in payPeriod.PaySlips)
             {
                 totalOTAmount += GetTotalOTAmountByDeveloperCode(paySlip.HiredDeveloperId, 0, paySlip.TotalOvertimeHours).TotalOtAmount;
                 totalActualAmount += GetTotalOTAmountByDeveloperCode(paySlip.HiredDeveloperId, paySlip.TotalActualWorkedHours, 0).TotalActualAmount;
@@ -85,6 +87,9 @@ namespace WeHire.Application.Services.PayPeriodServices
                                                              .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
 
+            if (project.Status == (int)ProjectStatus.Closed)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, "You can not clone this hiring request because the project has been closed!");
+
             var payPeriodDuration = GetPayPeriodDuration(project.StartDate, project.EndDate, requestBody.InputDate);
 
             var isExistPayPeriod = await _unitOfWork.PayPeriodRepository.AnyAsync(p => p.ProjectId == requestBody.ProjectId &&
@@ -93,24 +98,20 @@ namespace WeHire.Application.Services.PayPeriodServices
             if (isExistPayPeriod)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "PayPeriod", "PayPeriod is exist for this month, please update if you want to change!");
 
-            var hiredDeveloper = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working)
-                                                       .ToList();
+            var hiredDevelopers = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working ||
+                                                                     h.Status == (int)HiredDeveloperStatus.Completed)
+                                                         .ToList();
 
-            if (!hiredDeveloper.Any())
-            {
+            if (!hiredDevelopers.Any())
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", $"There are no developers working in this project!!");
-            }
 
-            var anyDevWorked = hiredDeveloper.Where(h => (h.Contract.FromDate >= payPeriodDuration.StartDate ||
-                                                          h.Contract.ToDate <= payPeriodDuration.EndDate) &&
-                                                          h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
-                                                          h.Status == (int)HiredDeveloperStatus.Working)
-                                             .ToList();
+
+            var anyDevWorked = hiredDevelopers.Where(h => h.Contract.FromDate <= payPeriodDuration.StartDate ||
+                                                          h.Contract.ToDate >= payPeriodDuration.EndDate)
+                                              .ToList();
 
             if (!anyDevWorked.Any())
-            {
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Project", $"There are no developers worked in {payPeriodDuration.Month}!!");
-            }
 
             var newPayPeriod = new PayPeriod
             {
@@ -121,7 +122,7 @@ namespace WeHire.Application.Services.PayPeriodServices
                 TotalAmount = 0,
                 CreatedAt = DateTime.Now,
                 Status = (int)PayPeriodStatus.Created,
-                PaySlips = hiredDeveloper
+                PaySlips = hiredDevelopers
                 .Where(p => p.Contract.FromDate < payPeriodDuration.EndDate && p.Contract.ToDate > payPeriodDuration.StartDate)
                 .Select(p =>
                 {
@@ -142,13 +143,29 @@ namespace WeHire.Application.Services.PayPeriodServices
                         WorkLogs = filteredWorkDays.Select(d => new WorkLog
                         {
                             WorkDate = d,
-                            TimeIn = null,
-                            TimeOut = null,
+                            TimeIn = new TimeSpan(8, 0, 0),
+                            TimeOut = new TimeSpan(17, 0, 0),
                             IsPaidLeave = null,
                         }).ToList()
                     };
                 }).ToList()
             };
+
+            foreach (var paySlip in newPayPeriod.PaySlips)
+            {
+                decimal totalWorkedHours = 0;
+
+                foreach (var workLog in paySlip.WorkLogs)
+                {
+                    TimeSpan workedHours = workLog.TimeOut.Value - workLog.TimeIn.Value;
+                    totalWorkedHours += (decimal)workedHours.TotalHours;
+                }
+                paySlip.TotalActualWorkedHours = totalWorkedHours;
+                paySlip.TotalEarnings = GetTotalEarningByDeveloperCode(paySlip.HiredDeveloperId, paySlip.TotalActualWorkedHours, paySlip.TotalOvertimeHours) ?? 0;
+            }
+
+            newPayPeriod.TotalAmount = newPayPeriod.PaySlips.Sum(p => p.TotalEarnings ?? 0);
+
             await _unitOfWork.PayPeriodRepository.InsertAsync(newPayPeriod);
             await _unitOfWork.SaveChangesAsync();
 
@@ -159,6 +176,12 @@ namespace WeHire.Application.Services.PayPeriodServices
 
         public async Task<string> InsertPayPeriodFromExcel(int projectId, ImportPaySlipModel importPaySlipModel)
         {
+            var project = await _unitOfWork.ProjectRepository.GetFirstOrDefaultAsync(p => p.ProjectId == projectId)
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
+
+            if (project.Status == (int)ProjectStatus.Closed)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, "You can not clone this hiring request because the project has been closed!");
+
             var isExistPayPeriod = await _unitOfWork.PayPeriodRepository.AnyAsync(p => p.ProjectId == projectId &&
                                                                                        p.StartDate == importPaySlipModel.StartDate &&
                                                                                        p.EndDate == importPaySlipModel.EndDate);
@@ -170,10 +193,12 @@ namespace WeHire.Application.Services.PayPeriodServices
                               .Include(h => h.Developer)
                               .Select(h => h.Developer)
                               .ToList();
+
             var hiredDeveloper = _unitOfWork.HiredDeveloperRepository
-                                .Get(h => h.ProjectId == projectId && 
-                                        h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
-                                        h.Status == (int)HiredDeveloperStatus.Working)
+                                .Get(h => h.ProjectId == projectId &&
+                                        h.Contract.Status == (int)ContractStatus.Signed &&
+                                        h.Status == (int)HiredDeveloperStatus.Working ||
+                                        h.Status == (int)HiredDeveloperStatus.Completed)
                                 .Include(h => h.Contract)
                                 .ToList();
 
@@ -194,7 +219,7 @@ namespace WeHire.Application.Services.PayPeriodServices
                     Status = (int)PayPeriodStatus.Created,
                     PaySlips = importPaySlipModel.PaySlips.Select(p => new PaySlip
                     {
-                        HiredDeveloperId = GetHiredDeveloperId(p.CodeName),
+                        HiredDeveloperId = GetHiredDeveloperId(p.CodeName, projectId),
                         TotalOvertimeHours = p.TotalOvertimeHours,
                         CreatedAt = DateTime.Now,
                         WorkLogs = p.WorkLogs.Select(w => new WorkLog
@@ -242,6 +267,7 @@ namespace WeHire.Application.Services.PayPeriodServices
                 }
 
                 newPayPeriod.TotalAmount = newPayPeriod.PaySlips.Sum(p => p.TotalEarnings ?? 0);
+
                 await _unitOfWork.PayPeriodRepository.InsertAsync(newPayPeriod);
                 await _unitOfWork.SaveChangesAsync();
                 transaction.Commit();
@@ -258,19 +284,30 @@ namespace WeHire.Application.Services.PayPeriodServices
 
         public async Task<ExcelFileModel> GeneratePayPeriodExcelFile(int projectId, DateTime inputDate)
         {
-            var project = await _unitOfWork.ProjectRepository.GetByIdAsync(projectId);
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId &&
+                                                                       p.Status != (int)ProjectStatus.ClosingProcess &&
+                                                                       p.Status != (int)ProjectStatus.Closed)
+                                                             .Include(p => p.HiredDevelopers.Where(h => h.Contract != null &&
+                                                                                                        h.Contract.Status == (int)ContractStatus.Signed))
+                                                             .ThenInclude(h => h.Developer)
+                                                             .ThenInclude(d => d.User)
+                                                             .Include(p => p.HiredDevelopers)
+                                                             .ThenInclude(h => h.Contract)
+                                                             .SingleOrDefaultAsync();
+
+            var signedDeveloper = project.HiredDevelopers.Where(h => h.Contract.Status == (int)ContractStatus.Signed).ToList();
+
+            var hiredDevelopers = signedDeveloper.Where(h => h.Status == (int)HiredDeveloperStatus.Working ||
+                                                             h.Status == (int)HiredDeveloperStatus.Completed)
+                                                 .ToList();
+            if (!hiredDevelopers.Any())
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", $"There are no developers working in this project!");
 
             var durationInMonth = GetPayPeriodDuration(project.StartDate, project.EndDate, inputDate);
 
-            var hiredDev = await _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == projectId && 
-                                                                          h.Contract.Status == (int)ContractEnum.ContractStatus.Signed &&
-                                                                          h.Status == (int)HiredDeveloperStatus.Working &&
-                                                                         (h.Contract.FromDate <= durationInMonth.StartDate ||
-                                                                          h.Contract.ToDate >= durationInMonth.EndDate))
-                                                                     .Include(h => h.Developer)
-                                                                        .ThenInclude(d => d.User)
-                                                                     .Include(d => d.Contract)
-                                                                     .ToListAsync();
+            var hiredDev = hiredDevelopers.Where(h => h.Contract.FromDate <= durationInMonth.StartDate ||
+                                                      h.Contract.ToDate >= durationInMonth.EndDate)
+                                          .ToList();
             if (!hiredDev.Any())
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Project", $"There are no developers worked in {durationInMonth.Month}!!");
 
@@ -454,9 +491,9 @@ namespace WeHire.Application.Services.PayPeriodServices
             }
         }
 
-        private int GetHiredDeveloperId(string codeName)
+        private int GetHiredDeveloperId(string codeName, int projectId)
         {
-            var hiredDeveloperId = _unitOfWork.HiredDeveloperRepository.Get(h => h.Developer.CodeName == codeName)
+            var hiredDeveloperId = _unitOfWork.HiredDeveloperRepository.Get(h => h.Developer.CodeName == codeName && h.ProjectId == projectId)
                                                                        .Include(h => h.Developer)
                                                                        .Select(h => h.HiredDeveloperId)
                                                                        .SingleOrDefault();

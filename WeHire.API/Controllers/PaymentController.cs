@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Payment;
 using WeHire.Application.Services.PaymentServices;
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _paymentService = paymentService;
         }
 
+        [Authorize]
         [HttpPost("Create")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreatePayment(CreatePaymentDTO requestBody)
@@ -31,6 +33,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost("Execute")]
         public async Task<IActionResult> ExecutePayment(string paymentId, string payerId)
         {

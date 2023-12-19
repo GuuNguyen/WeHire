@@ -5,6 +5,7 @@ using WeHire.Application.DTOs.Type;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.TypeServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -19,6 +20,7 @@ namespace WeHire.API.Controllers
             _typeService = typeService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetTypeDetail>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllTypeAsync([FromQuery] PagingQuery query, 
@@ -40,6 +42,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetTypeDetail>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateTypeAsync(CreateTypeDTO requestBody)
@@ -52,6 +55,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateTypeAsync(UpdateTypeModel requestBody)
@@ -64,6 +68,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{typeId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteTypeAsync(int typeId)

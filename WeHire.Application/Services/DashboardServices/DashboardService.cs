@@ -13,6 +13,7 @@ using WeHire.Domain.Entities;
 using WeHire.Domain.Enums;
 using WeHire.Infrastructure.IRepositories;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
 using static WeHire.Domain.Enums.PayPeriodEnum;
 using static WeHire.Domain.Enums.ProjectEnum;
@@ -60,6 +61,48 @@ namespace WeHire.Application.Services.DashboardServices
                 TotalMoney = totalMoney.ToString("#,##0 VND"),
                 TotalProject = project.Count(),
                 TotalHiringRequest = hiringRequest.Count(),
+            };
+        }
+
+        public async Task<DashboardByProject> GetDashboardByProjectAsync(int projectId)
+        {
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId)
+                                                       .Include(p => p.HiredDevelopers)
+                                                       .Include(p => p.HiringRequests)
+                                                       .SingleOrDefaultAsync();
+            var hiredDevelopers = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working ||
+                                                                     h.Status == (int)HiredDeveloperStatus.Terminated ||
+                                                                     h.Status == (int)HiredDeveloperStatus.Completed)
+                                                         .ToList();
+            var hiringRequests = project.HiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Saved ||
+                                                                   h.Status == (int)HiringRequestStatus.WaitingApproval ||
+                                                                   h.Status == (int)HiringRequestStatus.InProgress ||
+                                                                   h.Status == (int)HiringRequestStatus.Rejected ||
+                                                                   h.Status == (int)HiringRequestStatus.Completed ||
+                                                                   h.Status == (int)HiringRequestStatus.Closed ||
+                                                                   h.Status == (int)HiringRequestStatus.Expired)
+                                                        .ToList();
+
+            return new DashboardByProject
+            {
+                DeveloperDashboard = new DeveloperDashboard
+                {
+                    TotalHiredDeveloper = hiredDevelopers.Count(),
+                    TotalWorkingDeveloper = hiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working).Count(),
+                    TotalTerminatedDeveloper = hiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Terminated).Count(),
+                    TotalCompletedDeveloper = hiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Completed).Count(),
+                },
+                HiringRequestDashboard = new HiringRequestDashboard
+                {
+                    TotalHiringRequest = hiringRequests.Count(),
+                    TotalSaved = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Saved).Count(),
+                    TotalWaitingApproval = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.WaitingApproval).Count(),
+                    TotalInProcess = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.InProgress).Count(),
+                    TotalRejected = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Rejected).Count(),
+                    TotalCompleted = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Completed).Count(),
+                    TotalClosed = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Closed).Count(),
+                    TotalExpired = hiringRequests.Where(h => h.Status == (int)HiringRequestStatus.Expired).Count(),
+                }
             };
         }
 
@@ -137,6 +180,6 @@ namespace WeHire.Application.Services.DashboardServices
 
             var mappedRequests = _mapper.Map<List<GetListHiringRequest>>(requests.Take(7));
             return mappedRequests;
-        }
+        }      
     }
 }

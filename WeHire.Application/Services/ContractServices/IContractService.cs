@@ -10,15 +10,15 @@ namespace WeHire.Application.Services.ContractServices
 {
     public interface IContractService
     {
-        public List<GetListContract> GetContractAsync(PagingQuery query, SearchContractDTO searchKey);
-        public List<GetListContract> GetContractByCompanyAsync(int companyId, PagingQuery query, SearchContractDTO searchKey);
+        public List<GetListContract> GetContractAsync(SearchContractDTO searchKey);
+        public List<GetListContract> GetContractByCompanyAsync(int companyId, SearchContractDTO searchKey);
         public Task<GetPreContract> GetPreContractAsync(int developerId, int requestId);
         public Task<GetContractDetail> GetContractByIdAsync(int contractId);
         public Task<GetContractDetail> GetContractByDevAsync(int developerId, int projectId);
         public Task<GetContractDTO> CreateContractAsync(CreateContractDTO requestBody);
         public Task<GetContractDTO> ConfirmSignedContractAsync(int contractId);
         public Task<GetContractDTO> FailContractAsync(int contractId);
-        public Task FailContractOnBackgroundAsync(DateTime currentDate);
+        public Task EndContractOnBackgroundAsync(DateTime currentDate);
         public Task<int> GetTotalItemAsync(int? companyId = null);
     }
 }

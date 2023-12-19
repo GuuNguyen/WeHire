@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiredDeveloper;
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _hiredDeveloperService = hiredDeveloperService;
         }
 
+        [Authorize]
         [HttpGet("DevelopersInRequest/{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetMatchingDev>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevsInRequest(int requestId)
@@ -31,6 +33,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost("SendDevToHR")]
         [ProducesResponseType(typeof(ApiResponse<List<GetHiredDeveloperModel>>), StatusCodes.Status201Created)]
         public async Task<IActionResult> SendDevToHRAsync(SendDevDTO requestBody)
@@ -44,6 +47,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("RejectDev")]
         [ProducesResponseType(typeof(ApiResponse<GetHiredDeveloperModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RejectDev(int requestId, int developerId)
@@ -57,6 +61,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin, Manager")]
         [HttpPut("TerminateFromProject")]
         [ProducesResponseType(typeof(ApiResponse<GetHiredDeveloperModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> TerminateDev(int projectId, int developerId)

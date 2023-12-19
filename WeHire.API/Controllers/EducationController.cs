@@ -4,6 +4,7 @@ using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.Services.EducationServices;
 using WeHire.Application.DTOs.Education;
 using WeHire.Application.Utilities.Helper.Pagination;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _educationService = educationService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<List<GetEducationByAdmin>>), StatusCodes.Status200OK)]
         public IActionResult GetEducationByAdminAsync([FromQuery] PagingQuery query)
@@ -31,6 +33,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetEducationDTO>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEducationByIdAsync(int developerId)
@@ -43,6 +46,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetEducationDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateEducationAsync(CreateEducationDTO requestBody)
@@ -56,6 +60,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{educationId}")]
         [ProducesResponseType(typeof(ApiResponse<GetEducationDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateEducationAsync(int educationId, UpdateEducationModel requestBody)
@@ -68,6 +73,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpDelete("{educationId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteEducationAsync(int educationId)

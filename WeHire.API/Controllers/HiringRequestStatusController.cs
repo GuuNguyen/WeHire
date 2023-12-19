@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.HiringRequest;
@@ -19,6 +20,7 @@ namespace WeHire.API.Controllers
             _requestStatusService = requestStatusService;
         }
 
+        [Authorize]
         [HttpPut("ChangeWaitingStatus")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeWaitingStatusAsync(WaitingStatus requestBody)
@@ -31,6 +33,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("ExtendDuration")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeExpiredStatusAsync(ExpiredStatus requestBody)
@@ -43,6 +46,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("Closed")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CloseRequestAsync(CloseRequestModel requestBody)

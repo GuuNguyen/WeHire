@@ -30,7 +30,7 @@ namespace WeHire.Application.Services.TransactionServices
         }
 
 
-        public List<GetTransactionDTO> GetTransactions(PagingQuery query, SearchTransactionDTO searchKey)
+        public List<GetTransactionDTO> GetTransactions(SearchTransactionDTO searchKey)
         {
             IQueryable<Transaction> transactions = _unitOfWork.TransactionRepository.GetAll()
                                                               .Include(t => t.PayPeriod)
@@ -38,13 +38,12 @@ namespace WeHire.Application.Services.TransactionServices
                                                               .Include(t => t.PayPeriod.Project.Company)
                                                               .OrderByDescending(t => t.Timestamp);
             transactions = transactions.SearchItems(searchKey);
-            transactions = transactions.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
             var mappedTransaction = _mapper.Map<List<GetTransactionDTO>>(transactions);
             return mappedTransaction;
         }
 
 
-        public async Task<List<GetTransactionDTO>> GetTransactionsByCompanyIdAsync(int companyId, PagingQuery query, SearchTransactionDTO searchKey)
+        public async Task<List<GetTransactionDTO>> GetTransactionsByCompanyIdAsync(int companyId, SearchTransactionDTO searchKey)
         {
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
@@ -55,7 +54,6 @@ namespace WeHire.Application.Services.TransactionServices
                                                                 .OrderByDescending(t => t.Timestamp)
                                                                 .AsQueryable();
             transactions = transactions.SearchItems(searchKey);
-            transactions = transactions.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedTransaction = _mapper.Map<List<GetTransactionDTO>>(transactions);
             return mappedTransaction;

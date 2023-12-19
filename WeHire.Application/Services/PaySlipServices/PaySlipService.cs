@@ -33,6 +33,18 @@ namespace WeHire.Application.Services.PaySlipServices
             _payPeriodService = payPeriodService;
         }
 
+        public List<GetPaySlipByDevModel> GetPaySlipsByDeveloper(int projectId, int developerId)
+        {
+            var paySlips = _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == developerId && 
+                                                                        h.ProjectId == projectId)
+                                                                .Include(h => h.PaySlips)
+                                                                .ThenInclude(p => p.PayPeriod)
+                                                                .Select(h => h.PaySlips.ToList())
+                                                                .SingleOrDefault();
+            var mappedPaySlips = _mapper.Map<List<GetPaySlipByDevModel>>(paySlips); 
+            return mappedPaySlips;
+        }
+
         public List<GetPaySlipModel> GetPaySlipsByPayPeriodId(int payPeriodId, PagingQuery query)
         {
             var paySlips = _unitOfWork.PaySlipRepository.Get(p => p.PayPeriodId ==  payPeriodId)

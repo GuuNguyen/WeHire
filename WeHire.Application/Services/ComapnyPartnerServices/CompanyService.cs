@@ -34,11 +34,9 @@ namespace WeHire.Application.Services.ComapnyPartnerServices
             _fileService = fileService;
         }
 
-        public List<GetCompanyDetail> GetCompany(PagingQuery query, SearchCompanyDTO searchKey)
+        public List<GetCompanyDetail> GetCompany(SearchCompanyDTO searchKey)
         {
             var company = _unitOfWork.CompanyRepository.GetAll().Include(u => u.User).AsQueryable();
-
-            company = company.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             company = company.SearchItems(searchKey);
 
@@ -75,10 +73,8 @@ namespace WeHire.Application.Services.ComapnyPartnerServices
             if(user.RoleId != (int)RoleEnum.HR)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.ROLE_FIELD, ErrorMessage.NOT_ALLOWS);
 
-            var isExistEmail = await IsExistEmailAsync(requestBody.CompanyEmail);
-
-            if(isExistEmail)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
+            await IsExistEmail(requestBody.CompanyEmail);
+            await IsExistPhoneNumber(requestBody.PhoneNumber);
 
             var newCompany = _mapper.Map<CompanyPartner>(requestBody);
             newCompany.Rating = 0;
@@ -99,6 +95,9 @@ namespace WeHire.Application.Services.ComapnyPartnerServices
             var company = await _unitOfWork.CompanyRepository.GetByIdAsync(companyId)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
+            await IsExistEmailUpdate(company.CompanyEmail, requestBody.CompanyEmail);
+            await IsExistPhoneNumberUpdate(company.PhoneNumber, requestBody.PhoneNumber);
+            
             var updateCompany = _mapper.Map(requestBody, company);
             if(requestBody.File != null)
                 updateCompany.CompanyImage = await _fileService.UploadFileAsync(requestBody.File!, requestBody.CompanyName, ChildFolderName.LOGO_FOLDER);
@@ -110,13 +109,32 @@ namespace WeHire.Application.Services.ComapnyPartnerServices
             return mappedCompany;
         }
 
-        private async Task<bool> IsExistEmailAsync(string email)
+        public async Task IsExistPhoneNumber(string? phoneNumber)
         {
-            if(string.IsNullOrEmpty(email))
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.INCORRECT_INFO);
-            var isExistEmail = await _unitOfWork.CompanyRepository.AnyAsync(c => c.CompanyEmail == email);
+            var isExist = await _unitOfWork.CompanyRepository.AnyAsync(u => u.PhoneNumber.Equals(phoneNumber));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
+        }
 
-            return isExistEmail;
+        public async Task IsExistEmail(string? email)
+        {
+            var isExist = await _unitOfWork.CompanyRepository.AnyAsync(u => u.CompanyEmail.Equals(email));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
+        }
+
+        public async Task IsExistPhoneNumberUpdate(string? oldPhoneNumber, string newPhoneNumber)
+        {
+            var isExist = await _unitOfWork.CompanyRepository.AnyAsync(u => u.PhoneNumber.Equals(newPhoneNumber) && oldPhoneNumber != newPhoneNumber);
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
+        }
+
+        public async Task IsExistEmailUpdate(string oldEmail, string newEmail)
+        {
+            var isExist = await _unitOfWork.CompanyRepository.AnyAsync(u => u.CompanyEmail.Equals(newEmail) && !oldEmail.Equals(newEmail));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
         }
 
         private async Task IsExistCompany(int? userId)

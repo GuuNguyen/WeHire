@@ -13,12 +13,18 @@ namespace WeHire.Domain.Enums
         {
             [Description("Pending")]
             Pending = 1,
+
             [Description("Signed")]
             Signed = 2,
+
             [Description("Failed")]
             Failed = 3,
+
             [Description("Terminated")]
-            Terminated = 4
+            Terminated = 4,
+
+            [Description("End of contract")]
+            EndOfContract = 5,
         }
     }
 }

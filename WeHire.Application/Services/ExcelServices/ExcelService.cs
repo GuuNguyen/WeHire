@@ -178,26 +178,33 @@ namespace WeHire.Application.Services.ExcelServices
                                 if (TimeSpan.TryParse(timeParts[0].Trim(), out TimeSpan timeIn) &&
                                     TimeSpan.TryParse(timeParts[1].Trim(), out TimeSpan timeOut))
                                 {
-                                    var workLog = new WorkLogModel();
-                                    workLog.WorkDate = worksheet.Cells[6, j].Value.ToString() ?? "";
-                                    workLog.TimeIn = timeIn;
-                                    workLog.TimeOut = timeOut;
-                                    CheckForNullWorklog(workLog);
-                                    paySlip.WorkLogs.Add(workLog);
+                                    if(timeIn < timeOut)
+                                    {
+                                        var workLog = new WorkLogModel();
+                                        workLog.WorkDate = worksheet.Cells[6, j].Value.ToString() ?? "";
+                                        workLog.TimeIn = timeIn;
+                                        workLog.TimeOut = timeOut;
+                                        CheckForNullWorklog(workLog);
+                                        paySlip.WorkLogs.Add(workLog);
+                                    }
+                                    else
+                                    {
+                                        throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Error in row {i} column {j}, Time out must greater than time in!");
+                                    }
                                 }
                                 else
                                 {
-                                    throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Can not parse Time in and Time out in line {i}!!");
+                                    throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Error in row {i} column {j}, Can not parse Time in and Time out!");
                                 }
                             }
                             else
                             {
-                                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Data format error in line {i}!!");
+                                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Error in row {i} column {j}, Data format error!");
                             }
                         }
                         else
                         {
-                            throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Data format error or empty in line {i}!!");
+                            throw new ExceptionResponse(HttpStatusCode.BadRequest, "Excel format", $"Error in row {i} column {j}, Data format error or empty!");
                         }
                     }
                     paySlips.Add(paySlip);

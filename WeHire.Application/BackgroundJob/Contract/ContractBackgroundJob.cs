@@ -19,8 +19,7 @@ namespace WeHire.Application.BackgroundJob.Contract
 
         public async Task Execute(IJobExecutionContext context)
         {
-            Console.WriteLine(DateTime.Now);
-            await _contractService.FailContractOnBackgroundAsync(DateTime.Now);
+            await _contractService.EndContractOnBackgroundAsync(DateTime.Now);
         }
     }
 }

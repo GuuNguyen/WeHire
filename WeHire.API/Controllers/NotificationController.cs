@@ -17,6 +17,7 @@ namespace WeHire.API.Controllers
             _notificationService = notificationService;
         }
 
+
         [HttpGet("Count/{userId}")]
         [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetNotiCount(int userId)

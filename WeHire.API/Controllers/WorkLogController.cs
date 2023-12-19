@@ -19,7 +19,7 @@ namespace WeHire.API.Controllers
             _workLogService = workLogService;
         }
 
-        [Authorize(Roles = "Admin, Manager, HR")]
+        [Authorize]
         [HttpGet("ByPaySlip/{paySlipId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetWorkLogModel>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetWorkLogByPaySlipId(int paySlipId)
@@ -32,7 +32,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin, Manager, HR")]
+        [Authorize]
         [HttpPut]
         [ProducesResponseType(typeof(ApiResponse<WorkLogResponseModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateWorkLog(UpdateWorkLogModel requestBody)

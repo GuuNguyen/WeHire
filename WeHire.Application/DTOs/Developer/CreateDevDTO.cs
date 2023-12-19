@@ -14,12 +14,18 @@ namespace WeHire.Application.DTOs.Developer
     {
         [Required(ErrorMessage = "FirstName is required")]
         public string FirstName { get; set; }
+
         [Required(ErrorMessage = "LastName is required")]
         public string LastName { get; set; }
+
         [Required(ErrorMessage = "Email is required")]
+        [EmailAddress]
         public string Email { get; set; }
+
         [Required(ErrorMessage = "PhoneNumber is required")]
+        [RegularExpression(@"\b((\+84|0)[0-9]{9,10})\b", ErrorMessage = "Phone number is invalid")]
         public string PhoneNumber { get; set; }
+
         [Required(ErrorMessage = "GenderId is required")]
         public int? GenderId { get; set; }
         [Required(ErrorMessage = "DateOfBirth is required")]

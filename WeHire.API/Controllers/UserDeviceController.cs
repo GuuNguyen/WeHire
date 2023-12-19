@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.UserDevice;
 using WeHire.Application.Services.UserDeviceServices;
@@ -29,6 +30,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetUserDevice>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateDeviceTokenAsync(CreateUserDevice requestBody)
@@ -41,6 +43,7 @@ namespace WeHire.API.Controllers
                 Data = result
             });
         }
+
 
         [HttpDelete("{userDeviceId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]

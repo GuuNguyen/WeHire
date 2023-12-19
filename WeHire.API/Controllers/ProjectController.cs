@@ -6,6 +6,7 @@ using WeHire.Application.DTOs.Project;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.DTOs.File;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -20,12 +21,15 @@ namespace WeHire.API.Controllers
             _projectService = projectService;
         }
 
-        [HttpGet()]
+        [Authorize]
+        [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetListProjectDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListProjectAsync([FromQuery] PagingQuery query,
                                       [FromQuery] string? searchKeyString, [FromQuery] SearchProjectDTO searchKey)
         {
-            var result = _projectService.GetAllProject(query, searchKeyString, searchKey);
+            var result = _projectService.GetAllProject(searchKeyString, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() && searchKeyString == null ? await _projectService.GetTotalProjectAsync()
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -38,10 +42,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("ByCompany/{companyId}")]
         [ProducesResponseType(typeof(PagedApiResponse<GetListProjectDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListProjectByCompanyAsync(int companyId, 
@@ -49,7 +54,9 @@ namespace WeHire.API.Controllers
                                                             [FromQuery] string? searchKeyString,
                                                             [FromQuery] SearchProjectDTO searchKey)
         {
-            var result = _projectService.GetAllProjectByCompanyId(companyId, query, searchKeyString, searchKey);
+            var result = _projectService.GetAllProjectByCompanyId(companyId, searchKeyString, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() && searchKeyString == null ? await _projectService.GetTotalProjectAsync(companyId)
                                                                                     : result.Count;
             var paging = new PaginationInfo
@@ -62,13 +69,14 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("Developer/{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetListProjectDTO>>), StatusCodes.Status200OK)]
-        public  IActionResult GetProjectByDeveloperIdt(int developerId, [FromQuery] string? searchKeyString, [FromQuery] int devStatusInProject, [FromQuery] SearchProjectDTO searchKey)
+        public  IActionResult GetProjectByDeveloperIdt(int developerId, [FromQuery] string? searchKeyString, [FromQuery] List<int> devStatusInProject, [FromQuery] SearchProjectDTO searchKey)
         {
             var result = _projectService.GetProjectByDevId(developerId, devStatusInProject, searchKeyString, searchKey);
             return Ok(new ApiResponse<List<GetListProjectDTO>>()
@@ -78,6 +86,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<GetProjectDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListProjectAsync(int projectId)
@@ -90,9 +99,10 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetProjectDTO>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateProjectAsync([FromForm] CreateProjectDTO requestBody)
+        public async Task<IActionResult> CreateProjectAsync(CreateProjectDTO requestBody)
         {
             var result = await _projectService.CreateProjectAsync(requestBody);
 
@@ -103,6 +113,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<GetProjectDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProjectAsync(int projectId, [FromForm] UpdateProjectDTO requestBody)
@@ -116,6 +127,35 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
+        [HttpPut("CloseByHR/{projectId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetProjectDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CloseProjectByHRAsync(int projectId)
+        {
+            var result = await _projectService.CloseProjectByHRAsync(projectId);
+
+            return Ok(new ApiResponse<GetProjectDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [Authorize(Roles = "Admin, Manager")]
+        [HttpPut("CloseByManager/{projectId}")]
+        [ProducesResponseType(typeof(ApiResponse<GetProjectDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CloseProjectByManagerAsync(int projectId)
+        {
+            var result = await _projectService.CloseProjectByManagerAsync(projectId);
+
+            return Ok(new ApiResponse<GetProjectDTO>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [Authorize]
         [HttpPut("UpdateImage/{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateImageAsync(int projectId, [FromForm] FileDTO file)

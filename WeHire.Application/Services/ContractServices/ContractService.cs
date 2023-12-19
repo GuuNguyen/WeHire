@@ -41,7 +41,7 @@ namespace WeHire.Application.Services.ContractServices
             _notificationService = notificationService;
         }
 
-        public List<GetListContract> GetContractAsync(PagingQuery query, SearchContractDTO searchKey)
+        public List<GetListContract> GetContractAsync(SearchContractDTO searchKey)
         {
             var contracts = _unitOfWork.ContractRepository.GetAll()
                                                           .Include(c => c.HiredDevelopers)
@@ -53,8 +53,6 @@ namespace WeHire.Application.Services.ContractServices
 
             contracts = contracts.SearchItems(searchKey);
 
-            contracts = contracts.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
             var mappedContracts = contracts
                .Select(c => new GetListContract
                {
@@ -77,7 +75,7 @@ namespace WeHire.Application.Services.ContractServices
             return mappedContracts;
         }
 
-        public List<GetListContract> GetContractByCompanyAsync(int companyId, PagingQuery query, SearchContractDTO searchKey)
+        public List<GetListContract> GetContractByCompanyAsync(int companyId,SearchContractDTO searchKey)
         {
             var contracts = _unitOfWork.ContractRepository.Get(c => c.HiredDevelopers.Any(h => h.Project.CompanyId == companyId))                                                           
                                                           .Include(c => c.HiredDevelopers)
@@ -89,8 +87,6 @@ namespace WeHire.Application.Services.ContractServices
 
             contracts = contracts.SearchItems(searchKey);
 
-            contracts = contracts.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
             var mappedContracts = contracts
                .Select(c => new GetListContract
                {
@@ -112,7 +108,6 @@ namespace WeHire.Application.Services.ContractServices
                .ToList();
             return mappedContracts;
         }
-
 
         public async Task<GetPreContract> GetPreContractAsync(int developerId, int requestId)
         {
@@ -268,20 +263,22 @@ namespace WeHire.Application.Services.ContractServices
                 await _unitOfWork.ContractRepository.InsertAsync(newContract);
                 hiredDeveloper.Contract = newContract;
                 var interviews = _unitOfWork.InterviewRepository.Get(i => i.RequestId == request.RequestId &&
-                                                                         i.HiredDeveloperId == hiredDeveloper.HiredDeveloperId &&
-                                                                         i.Status != (int)InterviewStatus.Cancelled &&
-                                                                         i.Status != (int)InterviewStatus.Rejected)
+                                                                          i.HiredDeveloperId == hiredDeveloper.HiredDeveloperId &&
+                                                                         (i.Status == (int)InterviewStatus.WaitingDevApproval ||
+                                                                          i.Status == (int)InterviewStatus.Approved))
                                                                .ToList();
                 if (interviews.Any())
                 {
                     foreach (var interview in interviews)
                     {
                         interview.Status = (int)InterviewStatus.Cancelled;
+                        await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, interview.InterviewId, NotificationTypeString.INTERVIEW,
+                               $"Interview {interview.InterviewId} has been cancelled!");
                     }
                 }
                 await _unitOfWork.SaveChangesAsync();
                 await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, newContract.ContractId, NotificationTypeString.CONTRACT,
-                               $"Contract #{newContract.ContractCode} has been created for you!");
+                               $"Contract {newContract.ContractCode} has been created for you!");
                 transaction.Commit();
             }
             catch (Exception)
@@ -356,47 +353,40 @@ namespace WeHire.Application.Services.ContractServices
 
             var hrId = hiredDeveloper.Project.Company.UserId;
             await _notificationService.SendNotificationAsync(hrId, contract.ContractId, NotificationTypeString.CONTRACT,
-                                $"Contract  #{contract.ContractCode} has been failed!");
+                                $"Contract {contract.ContractCode} has been failed!");
 
             await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, contract.ContractId, NotificationTypeString.CONTRACT,
-                                $"Contract  #{contract.ContractCode} has been failed!");
+                                $"Contract {contract.ContractCode} has been failed!");
 
             await _unitOfWork.SaveChangesAsync();
             var mappedContract = _mapper.Map<GetContractDTO>(contract);
             return mappedContract;
         }
 
-        public async Task FailContractOnBackgroundAsync(DateTime currentDate)
+        public async Task EndContractOnBackgroundAsync(DateTime currentDate)
         {
-            var contracts = _unitOfWork.ContractRepository.Get(c => c.Status == (int)ContractStatus.Pending &&
-                                                                   currentDate > c.CreatedAt.Value.AddDays(7));
+            var contracts = _unitOfWork.ContractRepository.Get(c => c.Status == (int)ContractStatus.Signed &&
+                                                                    currentDate >= c.ToDate);
             if (contracts.Any())
             {
                 foreach (var contract in contracts)
                 {
                     var hiredDeveloper = await _unitOfWork.HiredDeveloperRepository.Get(h => h.ContractId == contract.ContractId &&
-                                                                              h.Status == (int)HiredDeveloperStatus.ContractProcessing)
+                                                                              h.Status == (int)HiredDeveloperStatus.Working)
                                                                     .Include(h => h.Developer)
-                                                                    .Include(h => h.Project)
-                                                                    .ThenInclude(p => p.Company)
                                                                     .SingleOrDefaultAsync();
 
-                    hiredDeveloper.Status = (int)HiredDeveloperStatus.ContractFailed;
+                    hiredDeveloper.Status = (int)HiredDeveloperStatus.Completed;
                     hiredDeveloper.Developer.Status = (int)DeveloperStatus.Available;
-                    contract.Status = (int)ContractStatus.Failed;
-
-                    var hrId = hiredDeveloper.Project.Company.UserId;
-                    await _notificationService.SendNotificationAsync(hrId, contract.ContractId, NotificationTypeString.CONTRACT,
-                                        $"Contract  #{contract.ContractCode} has been failed!");
+                    contract.Status = (int)ContractStatus.EndOfContract;
 
                     await _notificationService.SendNotificationAsync(hiredDeveloper.Developer.UserId, contract.ContractId, NotificationTypeString.CONTRACT,
-                                $"Contract  #{contract.ContractCode} has been failed!");
+                                $"Contract {contract.ContractCode} has been ended. You are available for new job now!");
 
                     await _unitOfWork.SaveChangesAsync();
                 }
             }
         }
-
 
         private async Task<string> GenerateUniqueCodeName()
         {

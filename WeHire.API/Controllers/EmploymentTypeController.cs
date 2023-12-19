@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WeHire.Application.DTOs.EmploymentType;
 using WeHire.Application.Services.EmploymentTypeServices;
@@ -17,6 +18,7 @@ namespace WeHire.API.Controllers
             _employmentTypeService = employmentTypeService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<List<GetEmploymentTypeDTO>>), StatusCodes.Status200OK)]
         public IActionResult GetAllEmploymentType()

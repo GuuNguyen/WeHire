@@ -60,10 +60,13 @@ namespace WeHire.Application.Services.UserDeviceServices
 
         private async Task IsExistDeviceAsync(int userId, string deviceToken)
         {
-            var userDevice = await _unitOfWork.UserDeviceRepository.Get(ud => ud.UserId == userId && ud.DeviceToken == deviceToken).SingleOrDefaultAsync();
-            if (userDevice != null)
+            var userDevices = await _unitOfWork.UserDeviceRepository.Get(ud => ud.UserId == userId && ud.DeviceToken == deviceToken).ToListAsync();
+            if (userDevices.Any())
             {
-                await _unitOfWork.UserDeviceRepository.DeleteAsync(userDevice.UserDeviceId);
+                foreach (var userDevice in userDevices)
+                {
+                    await _unitOfWork.UserDeviceRepository.DeleteAsync(userDevice.UserDeviceId);
+                }       
                 await _unitOfWork.SaveChangesAsync();
             }             
         }

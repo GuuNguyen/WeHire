@@ -7,6 +7,7 @@ using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.UserServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,13 +22,16 @@ namespace WeHire.API.Controllers
             _userService = userService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetUserDetail>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUserAsync([FromQuery] int roleId,
                                                          [FromQuery] PagingQuery query, 
                                                          [FromQuery] SearchUserDTO searchKey)
         {
-            var result = _userService.GetAllUser(roleId, query, searchKey);
+            var result = _userService.GetAllUser(roleId, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _userService.GetTotalItemAsync()
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -40,10 +44,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserLoginAsync(int id)
@@ -57,7 +62,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateEmployeeAsync(CreateEmployeeDTO requestBody)
@@ -71,6 +76,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserAsync(int id, [FromForm] UpdateUserDTO requestBody)
@@ -84,6 +90,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("ByAdmin/{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserByAdminAsync(int id, [FromForm] UpdateUserAdminDTO requestBody)
@@ -97,6 +104,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("UpdatePassword/{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePasswordAsync(int id, UpdatePassword requestBody)
@@ -110,6 +118,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("ChangeStatus/{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetUserDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeStatusAsync(int id)

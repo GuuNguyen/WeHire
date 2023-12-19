@@ -7,6 +7,7 @@ using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.DeveloperServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,7 +22,7 @@ namespace WeHire.API.Controllers
             _devService = devService;
         }
 
-
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldDev>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllDevAsync([FromQuery] PagingQuery query,
@@ -43,7 +44,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("ByProject")]
         [ProducesResponseType(typeof(ApiResponse<List<GetDeveloperInProject>>), StatusCodes.Status200OK)]
         public IActionResult GetDevByProjectId([FromQuery] DevInProjectRequestModel requestBody)
@@ -56,7 +57,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("{devId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevByIdAsync(int devId)
@@ -70,7 +71,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("DevMatching/{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetMatchingDev>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMatchingDev(int requestId)
@@ -82,11 +83,12 @@ namespace WeHire.API.Controllers
                 Code = StatusCodes.Status200OK,
                 Data = result
             });
-        }      
+        }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetDevDTO>), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateEmployeeAsync(CreateDevDTO requestBody)
+        public async Task<IActionResult> CreateDeveloperAsync(CreateDevDTO requestBody)
         {
             var result = await _devService.CreateDevAsync(requestBody);
 
@@ -97,6 +99,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("ByAdmin/{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateDeveloperByAdminAsync(int developerId, [FromForm] UpdateDevByAdmin requestBody)
@@ -109,6 +112,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin, Developer")]
         [HttpPut("{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<GetDevDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateDeveloperAsync(int developerId, [FromForm] UpdateDevModel requestBody)
@@ -121,7 +125,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize(Roles = "Admin")]
         [HttpPut("UpdateUserStatusOfDeveloper/{developerId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeStatusDevAsync(ChangeStatusDeveloper requestBody)

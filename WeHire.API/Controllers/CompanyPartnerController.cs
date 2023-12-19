@@ -7,6 +7,7 @@ using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.ComapnyPartnerServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,12 +22,14 @@ namespace WeHire.API.Controllers
             _companyService = companyService;
         }
 
-
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetCompanyDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCompanyAsync([FromQuery] PagingQuery query, [FromQuery] SearchCompanyDTO searchKey)
         {
-            var result = _companyService.GetCompany(query, searchKey);
+            var result = _companyService.GetCompany(searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _companyService.GetTotalItemAsync() : result.Count;
             var paging = new PaginationInfo
             {
@@ -37,12 +40,13 @@ namespace WeHire.API.Controllers
             return Ok(new PagedApiResponse<GetCompanyDetail>()
             {
                 Code = StatusCodes.Status200OK,
-                Data = result,
-                Paging = paging
+                Paging = paging,
+                Data = pagingResult
             });
         }
 
 
+        [Authorize]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ApiResponse<GetCompanyDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCompanyByIdAsync(int id)
@@ -56,6 +60,8 @@ namespace WeHire.API.Controllers
             });
         }
 
+
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetCompanyDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateCompanyAsync([FromForm] CreateCompanyDTO requestBody)
@@ -69,6 +75,8 @@ namespace WeHire.API.Controllers
             });
         }
 
+
+        [Authorize]
         [HttpPut]
         [ProducesResponseType(typeof(ApiResponse<GetCompanyDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateCompanyAsync(int companyId,[FromForm] UpdateCompanyDTO requestBody)
@@ -82,6 +90,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpDelete("{companyId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteCompanyAsync(int companyId)
