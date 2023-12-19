@@ -32,6 +32,7 @@ using static WeHire.Domain.Enums.SkillEnum;
 using static WeHire.Domain.Enums.TypeEnum;
 using static WeHire.Domain.Enums.UserEnum;
 using WeHire.Infrastructure.IRepositories;
+using WeHire.Application.Services.UserServices;
 
 namespace WeHire.Application.Services.DeveloperServices
 {
@@ -41,14 +42,16 @@ namespace WeHire.Application.Services.DeveloperServices
         private readonly IMapper _mapper;
         private readonly IFileService _fileService;
         private readonly IPercentCalculateService _percentCalculateService;
+        private readonly IUserService _userService;
 
-        public DeveloperService(IUnitOfWork unitOfWork, IMapper mapper,
+        public DeveloperService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService,
                                 IFileService fileService, IPercentCalculateService percentCalculateService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileService = fileService;
             _percentCalculateService = percentCalculateService;
+            _userService = userService;
         }
 
         public List<GetAllFieldDev> GetAllDev(PagingQuery query, SearchDeveloperDTO searchKey)
@@ -125,9 +128,8 @@ namespace WeHire.Application.Services.DeveloperServices
             if(requestBody.Status != null && requestBody.Status.Any())
                 hiredDevs = hiredDevs.Where(h => requestBody.Status.Contains(h.Status)).ToList();
 
-            var devs = hiredDevs.Select(h => h.Developer).ToList();
+            var mappedDevs = _mapper.Map<List<GetDeveloperInProject>>(hiredDevs);
 
-            var mappedDevs = _mapper.Map<List<GetDeveloperInProject>>(devs);
             return mappedDevs;
         }
 
@@ -178,10 +180,11 @@ namespace WeHire.Application.Services.DeveloperServices
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
-                await IsExistPhoneNumber(requestBody.PhoneNumber);
-                await IsExistEmail(requestBody.Email);
+                await _userService.IsExistPhoneNumber(requestBody.PhoneNumber);
+                await _userService.IsExistEmail(requestBody.Email);
 
-                newUser.Password = GenerateRandomPassword(12);
+                //newUser.Password = GenerateRandomPassword(12);
+                newUser.Password = "1";
                 newUser.Status = (int)UserStatus.Active;
                 newUser.RoleId = (int)RoleEnum.Developer;
 
@@ -228,8 +231,8 @@ namespace WeHire.Application.Services.DeveloperServices
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
-                await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
-                await IsExistEmailUpdate(user.Email, requestBody.Email);
+                await _userService.IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
+                await _userService.IsExistEmailUpdate(user.Email, requestBody.Email);
 
                 updatedUser.Password = requestBody.Password;
                 if (requestBody.File != null)
@@ -271,7 +274,7 @@ namespace WeHire.Application.Services.DeveloperServices
             using var transaction = _unitOfWork.BeginTransaction();
             try
             {
-                await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
+                await _userService.IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
                 if (requestBody.File != null)
                     updatedUser.UserImage = await _fileService.UploadFileAsync(requestBody.File!, $"{user.FirstName}_{user.LastName}", ChildFolderName.AVATAR_FOLDER);
                 _unitOfWork.DeveloperRepository.Update(updatedDev);
@@ -372,34 +375,7 @@ namespace WeHire.Application.Services.DeveloperServices
 
                 return new string(randomBytes.Select(b => validChars[b % validChars.Length]).ToArray());
             }
-        }
-        private async Task IsExistPhoneNumber(string? phoneNumber)
-        {
-            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.PhoneNumber.Equals(phoneNumber));
-            if (isExist)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
-        }
-
-        private async Task IsExistEmail(string? email)
-        {
-            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.Email.Equals(email));
-            if (isExist)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
-        }
-
-        private async Task IsExistPhoneNumberUpdate(string? oldPhoneNumber, string newPhoneNumber)
-        {
-            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.PhoneNumber.Equals(newPhoneNumber) && oldPhoneNumber != newPhoneNumber);
-            if (isExist)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
-        }
-
-        private async Task IsExistEmailUpdate(string oldEmail, string newEmail)
-        {
-            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.Email.Equals(newEmail) && !oldEmail.Equals(newEmail));
-            if (isExist)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
-        }
+        }       
 
         private async Task<string> GenerateUniqueCodeName()
         {
@@ -413,8 +389,6 @@ namespace WeHire.Application.Services.DeveloperServices
                 isExistDevCode = await _unitOfWork.DeveloperRepository.AnyAsync(d => d.CodeName == codeName);
             } while (isExistDevCode);
             return codeName;
-        }
-
-        
+        }       
     }
 }

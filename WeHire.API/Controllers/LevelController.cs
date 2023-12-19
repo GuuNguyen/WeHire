@@ -6,6 +6,7 @@ using WeHire.Application.DTOs.Skill;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.LevelServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -20,6 +21,7 @@ namespace WeHire.API.Controllers
             _levelService = levelService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetLevelDetail>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllLevelAsync([FromQuery] PagingQuery query, 
@@ -41,6 +43,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetLevelDetail>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateLevelAsync(CreateLevelDTO requestBody)
@@ -53,6 +56,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateLevelAsync(UpdateLevelModel requestBody)
@@ -65,6 +69,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{levelId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteLevelAsync(int levelId)

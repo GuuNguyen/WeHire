@@ -19,6 +19,7 @@ using WeHire.Domain.Entities;
 using WeHire.Application.Utilities.Helper.ConvertDate;
 using WeHire.Application.Services.EmailServices;
 using WeHire.Infrastructure.IRepositories;
+using WeHire.Application.Services.UserServices;
 
 namespace WeHire.Application.Services.AccountServices
 {
@@ -28,13 +29,16 @@ namespace WeHire.Application.Services.AccountServices
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly IJwtHelper _jwtHelper;
+        private readonly IUserService _userService;
 
-        public AccountService(IUnitOfWork unitOfWork, IMapper mapper,IJwtHelper jwtHelper, IEmailService emailService)
+        public AccountService(IUnitOfWork unitOfWork, IMapper mapper, IUserService userService,
+                              IJwtHelper jwtHelper, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
             _emailService = emailService;
+            _userService = userService;
         }
 
         public async Task<object> LoginAsync(LoginDTO userLoginDTO)
@@ -73,8 +77,8 @@ namespace WeHire.Application.Services.AccountServices
                     UserId = user.UserId,
                     DevId = devId,
                     Role = user.Role.RoleName,
-                    AccessTokenExp = DateTime.Now.AddHours(4),
-                    Expiration = (DateTime)user.RefreshTokenExpiryTime,
+                    AccessTokenExp = DateTime.Now.AddHours(24),
+                    RefreshTokenExp = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken
                 };
@@ -85,8 +89,8 @@ namespace WeHire.Application.Services.AccountServices
                 {
                     UserId = user.UserId,
                     Role = user.Role.RoleName,
-                    AccessTokenExp = DateTime.Now.AddHours(4),
-                    Expiration = (DateTime)user.RefreshTokenExpiryTime,
+                    AccessTokenExp = DateTime.Now.AddHours(24),
+                    RefreshTokenExp = (DateTime)user.RefreshTokenExpiryTime,
                     AccessToken = token,
                     RefreshToken = refreshToken
                 };
@@ -108,11 +112,14 @@ namespace WeHire.Application.Services.AccountServices
             var newAccessToken = _jwtHelper.generateJwtToken(principal.Claims);
             var newRefreshToken = _jwtHelper.GenerateRefreshToken();
 
-            user.RefreshToken = newAccessToken;
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = ConvertDateTime.ConvertTimeToSEA(DateTime.Now.AddDays(7));
             await _unitOfWork.SaveChangesAsync();
 
             return new RefreshTokenModel
             {
+                AccessTokenExp = DateTime.Now.AddDays(7),
+                RefreshTokenExp = (DateTime)user.RefreshTokenExpiryTime,
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
             };
@@ -121,14 +128,10 @@ namespace WeHire.Application.Services.AccountServices
 
         public async Task<GetUserDetail> HrSignUpAsync(CreateUserDTO requestBody)
         {
+            await _userService.IsExistEmail(requestBody.Email);
+            await _userService.IsExistPhoneNumber(requestBody.PhoneNumber);
+
             var user = _mapper.Map<User>(requestBody);
-            var isExitedEmail = await _unitOfWork.UserRepository.AnyAsync(u => u.Email == user.Email);
-
-            if (user == null)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.INCORRECT_INFO);
-
-            if (isExitedEmail)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
 
             user.Status = (int)UserStatus.InActive;
             user.RoleId = (int)RoleEnum.HR;
@@ -140,6 +143,7 @@ namespace WeHire.Application.Services.AccountServices
             var message = new Message(new string[] { user.Email }, "Account Verification", string.Empty);
             var fullName = $"{user.FirstName} {user.LastName}";
             await _emailService.SendEmailAsync(fullName, user.UserId, user.ConfirmationCode, message);
+
             var newUser = _mapper.Map<GetUserDetail>(user);
             return newUser;
         }

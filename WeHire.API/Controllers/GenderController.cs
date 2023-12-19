@@ -4,6 +4,7 @@ using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.DTOs.CompanyPartner;
 using WeHire.Application.Services.GenderServices;
 using WeHire.Application.DTOs.Gender;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _genderService = genderService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<List<GetGenderDTO>>), StatusCodes.Status200OK)]
         public IActionResult GetAllGender()

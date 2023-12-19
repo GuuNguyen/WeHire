@@ -16,7 +16,7 @@ namespace WeHire.Domain.Enums
 
             [Description("Interview Scheduled")]
             InterviewScheduled = 3,
-
+            
             [Description("Rejected")]
             Rejected = 4,
 
@@ -37,6 +37,9 @@ namespace WeHire.Domain.Enums
 
             [Description("Completed")]
             Completed = 10,
+
+            [Description("Project closed")]
+            ProjectClosed = 11,
         }
     }
 }

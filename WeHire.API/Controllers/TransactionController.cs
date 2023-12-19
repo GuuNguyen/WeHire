@@ -6,6 +6,7 @@ using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.TransactionServices;
 using WeHire.Application.DTOs.Transaction;
 using WeHire.Application.Utilities.Helper.CheckNullProperties;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -20,13 +21,15 @@ namespace WeHire.API.Controllers
             _transactionService = transactionService;
         }
 
-
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetTransactionDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreContract([FromQuery] PagingQuery query,
+        public async Task<IActionResult> GetAllTransaction([FromQuery] PagingQuery query,
                                                         [FromQuery] SearchTransactionDTO searchKey)
         {
-            var result = _transactionService.GetTransactions(query, searchKey);
+            var result = _transactionService.GetTransactions(searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _transactionService.GetTotalItemAsync()
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -39,17 +42,20 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("ByCompany")]
         [ProducesResponseType(typeof(PagedApiResponse<GetTransactionDTO>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreContract(int companyId,
+        public async Task<IActionResult> GetTransactionByCompany(int companyId,
                                                         [FromQuery] PagingQuery query, 
                                                         [FromQuery] SearchTransactionDTO searchKey)
         {
-            var result = await _transactionService.GetTransactionsByCompanyIdAsync(companyId, query, searchKey);
+            var result = await _transactionService.GetTransactionsByCompanyIdAsync(companyId, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _transactionService.GetTotalItemAsync(companyId)
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -62,7 +68,7 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
     }

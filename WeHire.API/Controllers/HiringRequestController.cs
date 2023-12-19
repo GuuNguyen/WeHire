@@ -8,6 +8,7 @@ using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.HiringRequestServices;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,14 +22,17 @@ namespace WeHire.API.Controllers
         {
             _requestService = requestService;
         }
-       
+
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetListHiringRequest>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllHiringRequestAsync([FromQuery] PagingQuery query,
                                                                   [FromQuery] SearchHiringRequestDTO searchKey,
                                                                   [FromQuery] SearchExtensionDTO searchExtensionKey)
         {
-            var result = _requestService.GetAllRequest(query, searchKey, searchExtensionKey);
+            var result = _requestService.GetAllRequest(searchKey, searchExtensionKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull())
                         ? await _requestService.GetTotalRequestsAsync()
                         : result.Count;
@@ -43,10 +47,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<GetAllFieldRequest>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRequestById(int requestId)
@@ -60,6 +65,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("ByDev")]
         [ProducesResponseType(typeof(ApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public IActionResult GetRequestByDevId([FromQuery] int devId, 
@@ -75,6 +81,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("ByCompany")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRequestByCompanyId([FromQuery] int companyId,
@@ -83,7 +90,9 @@ namespace WeHire.API.Controllers
                                                                [FromQuery] SearchHiringRequestDTO searchKey,
                                                                [FromQuery] SearchExtensionDTO searchExtensionKey)
         {
-            var result = await _requestService.GetRequestsByCompanyId(companyId, query, searchKeyString, searchKey, searchExtensionKey);
+            var result = await _requestService.GetRequestsByCompanyId(companyId, searchKeyString, searchKey, searchExtensionKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull() && searchKeyString == null)
                        ? await _requestService.GetTotalRequestsAsync(companyId)
                        : result.Count;
@@ -97,10 +106,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("ByProject")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetAllFieldRequest>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRequestByProject([FromQuery] int projectId,
@@ -109,10 +119,13 @@ namespace WeHire.API.Controllers
                                                              [FromQuery] SearchHiringRequestDTO searchKey,
                                                              [FromQuery] SearchExtensionDTO searchExtensionKey)
         {
-            var result = await _requestService.GetRequestsByProjectId(projectId, query, searchKeyString, searchKey, searchExtensionKey);
+            var result = await _requestService.GetRequestsByProjectId(projectId, searchKeyString, searchKey, searchExtensionKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = (searchKey.AreAllPropertiesNull() && searchExtensionKey.AreAllPropertiesNull() && searchKeyString == null)
                        ? await _requestService.GetTotalRequestsByProjectIdAsync(projectId)
                        : result.Count;
+
             var paging = new PaginationInfo
             {
                 Page = query.PageIndex,
@@ -123,9 +136,10 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
+
 
         [HttpGet("Status")]
         [ProducesResponseType(typeof(ApiResponse<List<EnumDetailDTO>>), StatusCodes.Status200OK)]
@@ -140,6 +154,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateRequestAsync(CreateRequestDTO requestBody)
@@ -153,6 +168,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost("Clone/{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<GetRequestDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CloneARequest(int requestId)

@@ -5,6 +5,7 @@ using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.InterviewServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -19,13 +20,15 @@ namespace WeHire.API.Controllers
             _interviewService = interviewService;
         }
 
+        [Authorize]
         [HttpGet("ByManager")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllInterviewByManager([FromQuery] PagingQuery query,
                                                                   int? companyId,
                                                                   [FromQuery] SearchInterviewWithRequest searchKey)
         {
-            var result = _interviewService.GetInterviewsByManager(query, companyId, searchKey);
+            var result = _interviewService.GetInterviewsByManager(companyId, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
 
             var total = !companyId.HasValue && searchKey.AreAllPropertiesNull() ? await _interviewService.GetTotalInterviewsAsync()
                                                                                 : result.Count;
@@ -39,7 +42,7 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
@@ -68,6 +71,7 @@ namespace WeHire.API.Controllers
         //    });
         //}
 
+        [Authorize]
         [HttpGet("{interviewId}")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewWithDev>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewById(int interviewId)
@@ -81,6 +85,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("Request/{requestId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewByRequestId(int requestId)
@@ -94,7 +99,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("Dev/{devId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetListInterview>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInterviewByDevId(int devId, [FromQuery] SearchInterviewDTO searchKey)
@@ -108,6 +113,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateInterviewAsync(CreateInterviewDTO requestBody)
@@ -121,6 +127,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{interviewId}")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateInterview(int interviewId, UpdateInterviewModel requestBody)
@@ -134,6 +141,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("ApprovalByDeveloper")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ChangeStatus(ChangeStatusDTO requestBody)
@@ -147,6 +155,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("Cancel/{interviewId}")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CancelInterview(int interviewId)
@@ -160,6 +169,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("Finish")]
         [ProducesResponseType(typeof(ApiResponse<GetInterviewDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> FinishInterview(int interviewId)

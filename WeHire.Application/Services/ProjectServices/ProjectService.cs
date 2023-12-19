@@ -20,6 +20,10 @@ using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.ProjectEnum;
 using WeHire.Infrastructure.IRepositories;
+using static WeHire.Domain.Enums.HiringRequestEnum;
+using WeHire.Application.Services.HiringRequestServices;
+using WeHire.Application.Services.NotificationServices;
+using static WeHire.Domain.Enums.DeveloperEnum;
 
 namespace WeHire.Application.Services.ProjectServices
 {
@@ -28,15 +32,20 @@ namespace WeHire.Application.Services.ProjectServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IFileService _fileService;
+        private readonly IHiringRequestService _hiringRequestService;
+        private readonly INotificationService _notificationService;
 
-        public ProjectService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService)
+        public ProjectService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService, INotificationService notificationService,
+                              IHiringRequestService hiringRequestService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileService = fileService;
+            _hiringRequestService = hiringRequestService;
+            _notificationService = notificationService;
         }
 
-        public List<GetListProjectDTO> GetAllProject(PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetAllProject(string? searchKeyString, SearchProjectDTO searchKey)
         {
             IQueryable<Project> projects = _unitOfWork.ProjectRepository.GetAll()
                                                         .Include(p => p.Company)
@@ -45,29 +54,29 @@ namespace WeHire.Application.Services.ProjectServices
 
             projects = SearchProjectByString(projects, searchKeyString);
             projects = projects.SearchItems(searchKey);
-            projects = projects.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedProjects = _mapper.Map<List<GetListProjectDTO>>(projects);
             return mappedProjects;
         }
 
-        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, PagingQuery query, string? searchKeyString, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetAllProjectByCompanyId(int companyId, string? searchKeyString, SearchProjectDTO searchKey)
         {
             IQueryable<Project> projects = _unitOfWork.ProjectRepository.Get(p => p.CompanyId == companyId)
                                                       .Include(p => p.Company)
                                                       .Include(p => p.ProjectType)
                                                       .OrderByDescending(n => n.CreatedAt);
-            
+
             projects = SearchProjectByString(projects, searchKeyString);
+
             projects = projects.SearchItems(searchKey);
-            projects = projects.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedProjects = _mapper.Map<List<GetListProjectDTO>>(projects.ToList());
             return mappedProjects;
         }
+
         private IQueryable<Project> SearchProjectByString(IQueryable<Project> query, string? searchKeyString)
         {
-            if(searchKeyString != null)
+            if (searchKeyString != null)
                 return query = query.Where(p => p.ProjectCode.Contains(searchKeyString) || p.ProjectName.Contains(searchKeyString));
             return query;
         }
@@ -92,10 +101,10 @@ namespace WeHire.Application.Services.ProjectServices
             return mappedProject;
         }
 
-        public List<GetListProjectDTO> GetProjectByDevId(int devId, int devStatusInProject, string? searchKeyString, SearchProjectDTO searchKey)
+        public List<GetListProjectDTO> GetProjectByDevId(int devId, List<int> devStatusInProject, string? searchKeyString, SearchProjectDTO searchKey)
         {
             var projects = _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId == devId &&
-                                                                         h.Status == devStatusInProject).AsNoTracking()
+                                                                         devStatusInProject.Contains(h.Status)).AsNoTracking()
                                                               .Include(h => h.Project)
                                                               .Include(h => h.Project.ProjectType)
                                                               .Include(h => h.Project.Company)
@@ -116,13 +125,18 @@ namespace WeHire.Application.Services.ProjectServices
             if (!isExistCompany)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
+            if (requestBody.Status != (int)ProjectStatus.Preparing &&
+                requestBody.Status != (int)ProjectStatus.InProcess)
+            {
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, "Status", "Status must be preparing or in process!");
+            }
+
             var newProject = _mapper.Map<Project>(requestBody);
             newProject.ProjectCode = await GenerateUniqueCodeName();
             newProject.CreatedAt = DateTime.Now;
             newProject.NumberOfDev = 0;
+            newProject.Status = requestBody.Status;
 
-            newProject.Status = requestBody.StartDate <= DateTime.Now ? (int)ProjectStatus.InProcess 
-                                                                      : (int)ProjectStatus.Preparing;
             await _unitOfWork.ProjectRepository.InsertAsync(newProject);
             await _unitOfWork.SaveChangesAsync();
 
@@ -135,7 +149,7 @@ namespace WeHire.Application.Services.ProjectServices
             if (projectId != requestBody.ProjectId)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_MATCH);
 
-            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId && 
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId &&
                                                                        p.Status != (int)ProjectStatus.Closed)
                                                              .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
@@ -149,6 +163,80 @@ namespace WeHire.Application.Services.ProjectServices
             await _unitOfWork.SaveChangesAsync();
 
             var mappedProject = _mapper.Map<GetProjectDTO>(updateProject);
+            return mappedProject;
+        }
+
+        public async Task<GetProjectDTO> CloseProjectByHRAsync(int projectId)
+        {
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId &&
+                                                                      (p.Status == (int)ProjectStatus.Preparing ||
+                                                                       p.Status == (int)ProjectStatus.InProcess))
+                                                             .Include(p => p.HiredDevelopers)
+                                                             .ThenInclude(h => h.Developer)
+                                                             .Include(p => p.HiringRequests)
+                                                             .ThenInclude(h => h.Interviews)
+                                                             .Include(p => p.Company)
+                                                             .SingleOrDefaultAsync()
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
+
+            var hiredDevelopers = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working).ToList();
+
+            var hiringRequests = project.HiringRequests.Where(r => r.Status == (int)HiringRequestStatus.WaitingApproval ||
+                                                                   r.Status == (int)HiringRequestStatus.InProgress ||
+                                                                   r.Status == (int)HiringRequestStatus.Saved ||
+                                                                   r.Status == (int)HiringRequestStatus.Expired)
+                                                       .ToList();
+            if (hiredDevelopers.Any())
+            {
+                project.Status = (int)ProjectStatus.ClosingProcess;
+                await _notificationService.SendManagerNotificationAsync(project.Company.CompanyName, projectId, NotificationTypeString.PROJECT,
+                                      $"The project {project.ProjectCode} requires closing.");
+            }
+            else
+                project.Status = (int)ProjectStatus.Closed;
+
+            if (hiringRequests.Any())
+            {
+                foreach (var hiringRequest in hiringRequests)
+                {
+                    await _hiringRequestService.HandleDeveloperAfterCloseHiringRequest(hiringRequest);
+                }
+            }
+            await _unitOfWork.SaveChangesAsync();
+
+            var mappedProject = _mapper.Map<GetProjectDTO>(project);
+            return mappedProject;
+        }
+
+        public async Task<GetProjectDTO> CloseProjectByManagerAsync(int projectId)
+        {
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == projectId &&
+                                                                       p.Status == (int)ProjectStatus.ClosingProcess)
+                                                             .Include(p => p.HiredDevelopers)
+                                                             .ThenInclude(h => h.Developer)
+                                                             .Include(p => p.HiringRequests)
+                                                             .ThenInclude(h => h.Interviews)
+                                                             .Include(p => p.Company)
+                                                             .SingleOrDefaultAsync()
+               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
+
+            var hiredDevelopers = project.HiredDevelopers.Where(h => h.Status == (int)HiredDeveloperStatus.Working).ToList();
+
+            if (hiredDevelopers.Any())
+            {
+                foreach (var hiredDeveloper in hiredDevelopers)
+                {
+                    hiredDeveloper.Status = (int)HiredDeveloperStatus.ProjectClosed;
+                    hiredDeveloper.Developer.Status = (int)DeveloperStatus.Available;
+                }
+            }
+            project.Status = (int)ProjectStatus.Closed;
+            await _unitOfWork.SaveChangesAsync();
+
+            await _notificationService.SendNotificationAsync(project.Company.UserId, projectId, NotificationTypeString.PROJECT,
+                                      $"The project {project.ProjectCode} has been closed by WeHire");
+
+            var mappedProject = _mapper.Map<GetProjectDTO>(project);
             return mappedProject;
         }
 
@@ -166,7 +254,7 @@ namespace WeHire.Application.Services.ProjectServices
             var query = _unitOfWork.ProjectRepository.GetAll();
 
             if (companyId.HasValue)
-               return total = await query.Where(p => p.CompanyId == companyId).CountAsync();
+                return total = await query.Where(p => p.CompanyId == companyId).CountAsync();
 
             return total = await query.CountAsync();
         }
@@ -199,6 +287,19 @@ namespace WeHire.Application.Services.ProjectServices
 
             double percentageRemaining = Math.Round((dayLeft / totalDays) * 100, 0);
             return percentageRemaining;
+        }
+
+        public async Task ChangeStatusBackground(DateTime currentDate)
+        {
+            var projects = await _unitOfWork.ProjectRepository.Get(p => p.StartDate >= currentDate && p.Status == (int)ProjectStatus.Preparing).ToListAsync();
+            if (projects.Any())
+            {
+                foreach (var project in projects)
+                {
+                    project.Status = (int)ProjectStatus.InProcess;
+                }
+                await _unitOfWork.SaveChangesAsync();
+            }
         }
     }
 }

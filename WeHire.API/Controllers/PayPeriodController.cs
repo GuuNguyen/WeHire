@@ -5,6 +5,7 @@ using WeHire.Application.Services.PayPeriodServices;
 using WeHire.Application.Services.ExcelServices;
 using WeHire.Application.DTOs.File;
 using WeHire.Application.DTOs.PayPeriod;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,6 +22,7 @@ namespace WeHire.API.Controllers
             _excelService = excelService;
         }
 
+        [Authorize]
         [HttpGet("{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<GetPayPeriodBill>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPayPeriodByProject(int projectId, DateTime inputDate)
@@ -34,6 +36,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("PayPeriodDuration/{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<List<PayPeriodInMonth>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPayPeriodDuration(int projectId)
@@ -47,6 +50,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("ExportToExcel/{projectId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ExportToExcelAsync(int projectId, DateTime inputDate)
@@ -55,6 +59,7 @@ namespace WeHire.API.Controllers
             return File(excelFile.ExcelByteArray, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile.FileName + ".xlsx");
         }
 
+        [Authorize]
         [HttpPost("ImportExcel/{projectId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
         public async Task<IActionResult> ImportExcel(int projectId, [FromForm] FileDTO excelFile)
@@ -81,6 +86,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetPayPeriodModel>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreatePayPeriod(CreatePayPeriodModel requestBody)

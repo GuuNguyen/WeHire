@@ -4,6 +4,7 @@ using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.Services.ProfessionalExperienceServices;
 using WeHire.Application.DTOs.ProfessionalExperience;
 using WeHire.Application.Utilities.Helper.Pagination;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -18,6 +19,7 @@ namespace WeHire.API.Controllers
             _professionalExperienceService = professionalExperienceService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<List<GetPEByAdmin>>), StatusCodes.Status200OK)]
         public IActionResult GetProfessionExperience([FromQuery] PagingQuery query)
@@ -30,6 +32,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("{developerId}")]
         [ProducesResponseType(typeof(ApiResponse<List<GetProfessionalExperience>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProfessionExperienceByIdAsync(int developerId)
@@ -42,6 +45,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetProfessionalExperience>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateProfessionExperienceAsync(CreateProfessionalExperience requestBody)
@@ -55,6 +59,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPut("{professionalId}")]
         [ProducesResponseType(typeof(ApiResponse<GetProfessionalExperience>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProfessionExperienceAsync(int professionalId, UpdateProfessionalExperience requestBody)
@@ -68,6 +73,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpDelete("{professionalId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteProfessionExperienceAsync(int professionalId)

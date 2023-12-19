@@ -20,6 +20,7 @@ using static WeHire.Domain.Enums.DeveloperEnum;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.HiringRequestEnum;
 using WeHire.Infrastructure.IRepositories;
+using static WeHire.Domain.Enums.InterviewEnum;
 
 namespace WeHire.Application.Services.HiredDeveloperServices
 {
@@ -135,6 +136,7 @@ namespace WeHire.Application.Services.HiredDeveloperServices
                                                                                s.DeveloperId == developerId &&
                                                                                s.Developer.Status == (int)DeveloperStatus.SelectedOnRequest)
                                                                      .Include(s => s.Developer)
+                                                                     .Include(s => s.Interviews)
                                                                      .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", "HiredDeveloper does not exist!");
 
@@ -142,6 +144,17 @@ namespace WeHire.Application.Services.HiredDeveloperServices
             {
                 hiredDev.Status = (int)HiredDeveloperStatus.Rejected;
                 hiredDev.Developer.Status = (int)DeveloperStatus.Available;
+
+                var interviews = hiredDev.Interviews.Where(i => i.Status == (int)InterviewStatus.WaitingDevApproval ||
+                                                                i.Status == (int)InterviewStatus.Approved)
+                                                    .ToList();
+                foreach(var interview in interviews)
+                {
+                    interview.Status = (int)InterviewStatus.Cancelled;
+                    await _notificationService.SendNotificationAsync(hiredDev.Developer.UserId, interview.InterviewId, NotificationTypeString.INTERVIEW,
+                              $"Interview {interview.InterviewId} has been cancelled!");
+                }
+
                 await _unitOfWork.SaveChangesAsync();
                 await _notificationService.SendNotificationAsync(hiredDev.Developer.UserId, requestId, NotificationTypeString.HIRING_REQUEST,
                       $"You have been rejected on request #{request.RequestCode}. Check out the request details!");

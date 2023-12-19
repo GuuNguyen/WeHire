@@ -28,6 +28,7 @@ using static WeHire.Domain.Enums.LevelEnum;
 using static WeHire.Domain.Enums.SkillEnum;
 using static WeHire.Domain.Enums.TypeEnum;
 using WeHire.Infrastructure.IRepositories;
+using static WeHire.Domain.Enums.ProjectEnum;
 
 namespace WeHire.Application.Services.HiringRequestServices
 {
@@ -46,8 +47,7 @@ namespace WeHire.Application.Services.HiringRequestServices
             _mapper = mapper;
         }
 
-
-        public List<GetListHiringRequest> GetAllRequest(PagingQuery query,
+        public List<GetListHiringRequest> GetAllRequest(
                                                       SearchHiringRequestDTO searchKey,
                                                       SearchExtensionDTO searchExtensionKey)
         {
@@ -58,7 +58,6 @@ namespace WeHire.Application.Services.HiringRequestServices
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
             requests = requests.SearchItems(searchKey);
-            requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedRequests = _mapper.Map<List<GetListHiringRequest>>(requests);
             return mappedRequests;
@@ -66,7 +65,6 @@ namespace WeHire.Application.Services.HiringRequestServices
 
 
         public async Task<List<GetAllFieldRequest>> GetRequestsByCompanyId(int companyId,
-                                                                           PagingQuery query,
                                                                            string? searchKeyString,
                                                                            SearchHiringRequestDTO searchKey,
                                                                            SearchExtensionDTO searchExtensionKey)
@@ -87,14 +85,12 @@ namespace WeHire.Application.Services.HiringRequestServices
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
             requests = requests.SearchItems(searchKey);
-            requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
             return mappedRequests;
         }
 
         public async Task<List<GetAllFieldRequest>> GetRequestsByProjectId(int projectId,
-                                                                           PagingQuery query,
                                                                            string? searchKeyString,
                                                                            SearchHiringRequestDTO searchKey,
                                                                            SearchExtensionDTO searchExtensionKey)
@@ -114,7 +110,6 @@ namespace WeHire.Application.Services.HiringRequestServices
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);
             requests = requests.SearchItems(searchKey);
-            requests = requests.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedRequests = _mapper.Map<List<GetAllFieldRequest>>(requests);
             return mappedRequests;
@@ -150,7 +145,9 @@ namespace WeHire.Application.Services.HiringRequestServices
                                                              .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.COMPANY_FIELD, ErrorMessage.COMPANY_NOT_EXIST);
 
-            var project = await _unitOfWork.ProjectRepository.GetByIdAsync(requestBody.ProjectId)
+            var project = await _unitOfWork.ProjectRepository.Get(p => p.ProjectId == requestBody.ProjectId && 
+                                                                       p.Status != (int)ProjectStatus.Closed)
+                                                             .SingleOrDefaultAsync()
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, ErrorMessage.PROJECT_NOT_EXIST);
 
             var newRequest = _mapper.Map<HiringRequest>(requestBody);
@@ -173,7 +170,7 @@ namespace WeHire.Application.Services.HiringRequestServices
                 if (!requestBody.isSaved)
                 {
                     await _notificationService.SendManagerNotificationAsync(company.CompanyName, newRequest.RequestId, NotificationTypeString.HIRING_REQUEST,
-                       $"They are posted a new request to hire developers for their company. The request is awaiting your approval.");
+                       $"{company.CompanyName} are posted a new request to hire developers for their company. The request is awaiting your approval.");
                 }
                 transaction.Commit();
             }
@@ -233,8 +230,14 @@ namespace WeHire.Application.Services.HiringRequestServices
                                                             .Include(r => r.LevelRequire)
                                                             .Include(r => r.SkillRequires)
                                                                  .ThenInclude(sr => sr.Skill)
+                                                            .Include(r => r.Project)
                                                             .SingleOrDefaultAsync()
                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.HIRING_REQUEST_FIELD, ErrorMessage.HIRING_REQUEST_NOT_EXIST);
+            
+            
+            if(request.Project.Status == (int)ProjectStatus.Closed)
+               throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PROJECT_FIELD, "You can not clone this hiring request because the project has been closed!");
+
             await HandleLevels((int)request.TypeRequireId!);
             await HandleTypes((int)request.LevelRequireId!);
             dynamic clonedRequest;
@@ -358,7 +361,7 @@ namespace WeHire.Application.Services.HiringRequestServices
                         await _unitOfWork.SaveChangesAsync();
 
                         await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                             $"Your hiring request #{request.RequestId} has expired!  You have 3 days to expand this request.");
+                                             $"Your hiring request {request.RequestId} has expired!  You have 3 days to expand this request.");
                     }
                 }
             }
@@ -382,10 +385,13 @@ namespace WeHire.Application.Services.HiringRequestServices
                     var UserHrId = request.Company.UserId;
 
                     await HandleDeveloperAfterCloseHiringRequest(request);
+                    request.Status = (int)HiringRequestStatus.Closed;
+
                     await _notificationService.SendNotificationAsync(UserHrId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                                       $"Your hiring request #{request.RequestId} has been closed because out of duration.");
+                                       $"Your hiring request {request.RequestId} has been closed because out of duration.");
                 }
             }
+            await _unitOfWork.SaveChangesAsync();
         }
 
 
@@ -407,7 +413,7 @@ namespace WeHire.Application.Services.HiringRequestServices
                     hiredDeveloper.Status = (int)HiredDeveloperStatus.RequestClosed;
                     dev.Status = (int)DeveloperStatus.Available;
                     await _notificationService.SendNotificationAsync(dev.UserId, request.RequestId, NotificationTypeString.HIRING_REQUEST,
-                          $"The hiring request #{request.RequestCode} has been closed.");
+                          $"The hiring request {request.RequestCode} has been closed.");
                 }
             }
             if (interviews.Any())

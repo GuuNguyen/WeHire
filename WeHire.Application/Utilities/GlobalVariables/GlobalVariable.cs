@@ -15,6 +15,7 @@ namespace WeHire.Application.Utilities.GlobalVariables
             public const string CONTRACT = "Contract";
             public const string PROJECT = "Project";
             public const string PAYMENT = "Payment";
+            public const string REPORT = "Report";
         }
 
         public static class Reason

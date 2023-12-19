@@ -11,6 +11,7 @@ namespace WeHire.Application.Services.PaySlipServices
     public interface IPaySlipService
     {
         public List<GetPaySlipModel> GetPaySlipsByPayPeriodId(int payPeriodId, PagingQuery query);
+        public List<GetPaySlipByDevModel> GetPaySlipsByDeveloper(int projectId, int developerId);
         public Task<GetUpdatePaySlipResponse> UpdateTotalOvertimeHourAsync(UpdatePaySlipModel requestBody);
     }
 }

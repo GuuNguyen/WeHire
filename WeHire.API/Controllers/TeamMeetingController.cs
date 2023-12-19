@@ -4,6 +4,7 @@ using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.TeamMeetingServices;
 using WeHire.Application.DTOs.TeamMeeting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -17,6 +18,7 @@ namespace WeHire.API.Controllers
             _teamMeetingService = teamMeetingService;
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMeetingObject(OnlineMeetingModel model)
@@ -26,6 +28,7 @@ namespace WeHire.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateMeeting(OnlineMeetingModel model)
@@ -34,6 +37,7 @@ namespace WeHire.API.Controllers
             return Ok("Update successful!");
         }
 
+        [Authorize]
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RemoveMeeting(OnlineMeetingModel model)

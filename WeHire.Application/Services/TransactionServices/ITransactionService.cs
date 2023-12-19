@@ -11,8 +11,8 @@ namespace WeHire.Application.Services.TransactionServices
 {
     public interface ITransactionService
     {
-        public List<GetTransactionDTO> GetTransactions(PagingQuery query, SearchTransactionDTO searchKey);
-        public Task<List<GetTransactionDTO>> GetTransactionsByCompanyIdAsync(int companyId, PagingQuery query, SearchTransactionDTO searchKey);
+        public List<GetTransactionDTO> GetTransactions(SearchTransactionDTO searchKey);
+        public Task<List<GetTransactionDTO>> GetTransactionsByCompanyIdAsync(int companyId, SearchTransactionDTO searchKey);
         public Task CreateTransactionAsync(Transaction requestBody);
         public Task<int> GetTotalItemAsync(int? companyId = null);
     }

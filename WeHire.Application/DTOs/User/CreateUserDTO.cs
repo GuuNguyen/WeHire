@@ -24,6 +24,7 @@ namespace WeHire.Application.DTOs.User
         public string Password { get; set; } = null!;
 
         [Required(ErrorMessage = "PhoneNumber is required")]
+        [RegularExpression(@"\b((\+84|0)[0-9]{9,10})\b", ErrorMessage = "Phone number is invalid")]
         public string PhoneNumber { get; set; } = null!;
     }
 }

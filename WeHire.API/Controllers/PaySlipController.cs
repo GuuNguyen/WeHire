@@ -6,6 +6,7 @@ using WeHire.Application.Services.PaySlipServices;
 using WeHire.Application.DTOs.Level;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.DTOs.PaySlip;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -20,6 +21,7 @@ namespace WeHire.API.Controllers
             _paySlipService = paySlipService;
         }
 
+        [Authorize]
         [HttpGet("ByPayPeriod/{payPeriodId}")]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetPaySlipModel>>), StatusCodes.Status200OK)]
         public IActionResult GetAllPaySlip(int payPeriodId, [FromQuery] PagingQuery query)
@@ -40,6 +42,21 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
+        [HttpGet("ByDeveloper")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetPaySlipByDevModel>>), StatusCodes.Status200OK)]
+        public IActionResult GetPaySlipByDeveloper([FromQuery]int projectId, [FromQuery]int developerId)
+        {
+            var result = _paySlipService.GetPaySlipsByDeveloper(projectId, developerId);
+
+            return Ok(new ApiResponse<List<GetPaySlipByDevModel>>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
+        [Authorize]
         [HttpPut]
         [ProducesResponseType(typeof(ApiResponse<GetUpdatePaySlipResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePaySlip(UpdatePaySlipModel requestBody)

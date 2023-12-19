@@ -71,13 +71,11 @@ namespace WeHire.Application.Services.UserServices
         }
 
 
-        public List<GetUserDetail> GetAllUser(int roleId, PagingQuery query, SearchUserDTO searchKey)
+        public List<GetUserDetail> GetAllUser(int roleId, SearchUserDTO searchKey)
         {
             var users = _unitOfWork.UserRepository.Get(u => u.RoleId == roleId && u.RoleId != (int)RoleEnum.Developer).AsNoTracking();
 
             users = users.SearchItems(searchKey);
-
-            users = users.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var userDetailsList = _mapper.Map<List<GetUserDetail>>(users);
 
@@ -90,11 +88,10 @@ namespace WeHire.Application.Services.UserServices
             if (requestBody == null)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.REQUEST_BODY, ErrorMessage.NULL_REQUEST_BODY);
 
-            var user = _mapper.Map<User>(requestBody);
-            var isExitedEmail = await _unitOfWork.UserRepository.AnyAsync(u => u.Email == user.Email);
+            await IsExistEmail(requestBody.Email);
+            await IsExistEmail(requestBody.PhoneNumber);
 
-            if (isExitedEmail)
-                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
+            var user = _mapper.Map<User>(requestBody);
 
             user.Status = (int)UserStatus.Active;
 
@@ -112,6 +109,8 @@ namespace WeHire.Application.Services.UserServices
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+
+            await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
 
             user = _mapper.Map(requestBody, user);
             if(requestBody.File != null)
@@ -131,6 +130,9 @@ namespace WeHire.Application.Services.UserServices
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id)
                 ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.USER_FIELD, ErrorMessage.USER_NOT_EXIST);
+
+            await IsExistEmailUpdate(user.Email, requestBody.Email);
+            await IsExistPhoneNumberUpdate(user.PhoneNumber, requestBody.PhoneNumber);
 
             user = _mapper.Map(requestBody, user);
             if (requestBody.File != null)
@@ -188,6 +190,34 @@ namespace WeHire.Application.Services.UserServices
         {
             var total = await _unitOfWork.UserRepository.GetAll().CountAsync();
             return total;
+        }
+
+        public async Task IsExistPhoneNumber(string? phoneNumber)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.PhoneNumber.Equals(phoneNumber));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
+        }
+
+        public async Task IsExistEmail(string? email)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.Email.Equals(email));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
+        }
+
+        public async Task IsExistPhoneNumberUpdate(string? oldPhoneNumber, string newPhoneNumber)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.PhoneNumber.Equals(newPhoneNumber) && oldPhoneNumber != newPhoneNumber);
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.PHONE_NUMBER_FIELD, ErrorMessage.PHONE_NUMBER_ALREADY_EXIST);
+        }
+
+        public async Task IsExistEmailUpdate(string oldEmail, string newEmail)
+        {
+            var isExist = await _unitOfWork.UserRepository.AnyAsync(u => u.Email.Equals(newEmail) && !oldEmail.Equals(newEmail));
+            if (isExist)
+                throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.EMAIL_FIELD, ErrorMessage.EMAIL_ALREADY_EXIST);
         }
     }
 }

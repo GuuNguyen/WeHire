@@ -17,8 +17,11 @@ namespace WeHire.Domain.Enums
             [Description("In process")]
             InProcess = 2,
 
+            [Description("Closing process")]
+            ClosingProcess = 3,
+
             [Description("Closed")]
-            Closed = 3,
+            Closed = 4,
         }
     }
 }

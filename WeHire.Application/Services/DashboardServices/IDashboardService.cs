@@ -13,6 +13,7 @@ namespace WeHire.Application.Services.DashboardServices
         public Task<DashboardByAdmin> GetDashboardByAdminAsync();
         public Dictionary<DayOfWeek, int> GetProjectDashboard(DateTime dateInWeek);
         public Dictionary<DayOfWeek, int> GetHiringRequestDashboard(DateTime dateInWeek);
+        public Task<DashboardByProject> GetDashboardByProjectAsync(int projectId);
         public List<GetListHiringRequest> GetRecentRequest();
     }
 }

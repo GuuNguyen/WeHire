@@ -26,7 +26,5 @@ namespace WeHire.Application.DTOs.User
         public string PhoneNumber { get; set; }
         [Required]
         public DateTime? DateOfBirth { get; set; }
-        [Required]
-        public int Status { get; set; }
     }
 }

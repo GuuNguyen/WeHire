@@ -22,6 +22,7 @@ using WeHire.Application.DTOs.TeamMeeting;
 using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.Helper.ConvertDate;
 using WeHire.Infrastructure.IRepositories;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
 using static System.Net.WebRequestMethods;
 using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 
@@ -35,7 +36,6 @@ namespace WeHire.Application.Services.TeamMeetingServices
         private readonly string _clientSecret;
         private readonly string _tenantId;
         private readonly string _scope;
-        private readonly string _redirectUrl;
 
         public TeamMeetingService(IConfiguration configuration, IUnitOfWork unitOfWork)
         {
@@ -44,7 +44,6 @@ namespace WeHire.Application.Services.TeamMeetingServices
             _clientSecret = _configuration["TeamMeeting:ClientSecret"];
             _tenantId = _configuration["TeamMeeting:TenantId"];
             _scope = _configuration["TeamMeeting:Scope"];
-            _redirectUrl = _configuration["TeamMeeting:RedirectUrl"];
             _unitOfWork = unitOfWork;
         }
 
@@ -152,7 +151,7 @@ namespace WeHire.Application.Services.TeamMeetingServices
                                                                  .ThenInclude(d => d.User)
                                                                  .SingleOrDefaultAsync()
               ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, ErrorField.INTERVIEW_FIELD, ErrorMessage.INTERVIEW_NOT_EXIST);
-           
+
             var convertedDate = ConvertDateTime.ConvertDateToStringForMeeting(interview.DateOfInterview);
 
             var convertedStartTime = ConvertTime.ConvertTimeToShortFormat(interview.StartTime);
@@ -180,8 +179,7 @@ namespace WeHire.Application.Services.TeamMeetingServices
                     TimeZone = "Asia/Ho_Chi_Minh",
                 },
             };
-
-            await service.Me.Events[interview.EventId].PatchAsync(requestBody);
+            await service.Me.Events[interview.EventId].PatchAsync(requestBody);          
         }
 
         public async Task DeleteMeetingAsync(OnlineMeetingModel model)

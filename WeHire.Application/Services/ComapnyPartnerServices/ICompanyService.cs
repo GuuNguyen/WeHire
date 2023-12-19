@@ -10,7 +10,7 @@ namespace WeHire.Application.Services.ComapnyPartnerServices
 {
     public interface ICompanyService
     {
-        public List<GetCompanyDetail> GetCompany(PagingQuery query, SearchCompanyDTO searchKey);
+        public List<GetCompanyDetail> GetCompany(SearchCompanyDTO searchKey);
         public Task<GetCompanyDetail> GetCompanyById(int id);
         public Task<GetCompanyDTO> CreateCompanyAsync(CreateCompanyDTO requestBody);
         public Task<GetCompanyDTO> UpdateCompanyAsync(int companyId, UpdateCompanyDTO requestBody);

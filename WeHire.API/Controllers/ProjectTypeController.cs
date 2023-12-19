@@ -7,6 +7,7 @@ using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.ProjectTypeServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -21,6 +22,7 @@ namespace WeHire.API.Controllers
             _projectTypeService = projectTypeService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<List<GetProjectTypeDTO>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllProjectTypeAsync([FromQuery] PagingQuery query,
@@ -43,6 +45,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetProjectTypeDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateProjectTypeAsync(string projectTypeName)
@@ -56,7 +59,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpPut("{projectTypeId}")]
         [ProducesResponseType(typeof(ApiResponse<GetProjectTypeDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProjectTypeAsync(int projectTypeId, UpdateProjectTypeDTO requestBody)
@@ -70,7 +73,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpDelete("{projectTypeId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RemoveProjectTypeAsync(int projectTypeId)

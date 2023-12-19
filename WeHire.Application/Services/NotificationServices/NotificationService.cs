@@ -33,12 +33,12 @@ namespace WeHire.Application.Services.NotificationServices
                                             .Get(un => un.UserId == userId)
                                             .AsNoTracking()
                                             .Include(un => un.Notification.NotiType)
-                                            .Include(un => un.Notification.UserNotifications)
-                                            .Select(un => un.Notification);
+                                            .Include(un => un.Notification)
+                                            .ToList();
 
-            var notifications = await notificationsQuery
+            var notifications =  notificationsQuery.Select(n => n.Notification)
                                 .OrderByDescending(n => n.CreatedAt)
-                                .ToListAsync();
+                                .ToList();
 
             var distinctNotifications = notifications
                                 .GroupBy(n => n.NotificationId)
@@ -131,8 +131,7 @@ namespace WeHire.Application.Services.NotificationServices
                 NotiTypeId = type.NotiTypeId,
                 RouteId = routeId
             };
-            await _unitOfWork.NotificationRepository.InsertAsync(newNoti);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.NotificationRepository.InsertAsync(newNoti);           
 
             var managers = _unitOfWork.UserRepository.Get(m => m.RoleId == (int)RoleEnum.Manager &&
                                                       m.Status == (int)UserStatus.Active)
@@ -146,6 +145,8 @@ namespace WeHire.Application.Services.NotificationServices
                                                 IsRead = false,
                                                 IsNew = true,
                                             }).ToList();
+            await _unitOfWork.SaveChangesAsync();
+
             var managerIds = managers.Select(m => m.UserId).ToList();
 
             await SendMessageToDevice(managerIds, notiType, content, notiType, routeId);

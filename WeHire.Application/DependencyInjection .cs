@@ -30,7 +30,7 @@ namespace WeHire.Application
 
             services.ConfigureOptions<HiringRequestBackgroundJobSetup>();
             services.ConfigureOptions<InterviewBackgroundJobSetup>();
-            services.ConfigureOptions<ContractBackgroundJobSetup>();
+            //services.ConfigureOptions<ContractBackgroundJobSetup>();
         }
     }
 }

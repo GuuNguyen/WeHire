@@ -11,6 +11,7 @@ namespace WeHire.Domain.Enums
         public enum CompanyStatus
         {
             Inactive = 0,
+
             Active = 1,
         }
     }

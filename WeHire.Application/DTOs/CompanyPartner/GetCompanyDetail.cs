@@ -17,6 +17,8 @@ namespace WeHire.Application.DTOs.CompanyPartner
         public int? Rating { get; set; }
         public string CompanyImage { get; set; }
         public string Country { get; set; }
+        public string FacebookUrl { get; set; }
+        public string LinkedInkUrl { get; set; }
         public string StatusString { get; set; }
         public int? UserId { get; set; }
         public string? HRFullName { get; set; }

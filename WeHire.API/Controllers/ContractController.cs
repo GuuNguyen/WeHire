@@ -5,6 +5,7 @@ using WeHire.Application.Utilities.Helper.CheckNullProperties;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Services.ContractServices;
 using static WeHire.Application.Utilities.ResponseHandler.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WeHire.API.Controllers
 {
@@ -19,11 +20,14 @@ namespace WeHire.API.Controllers
             _contractService = contractService;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(PagedApiResponse<GetListContract>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllContract([FromQuery] PagingQuery query, [FromQuery] SearchContractDTO searchKey)
         {
-            var result = _contractService.GetContractAsync(query, searchKey);
+            var result = _contractService.GetContractAsync(searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _contractService.GetTotalItemAsync()
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -36,15 +40,18 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("ByCompany")]
         [ProducesResponseType(typeof(PagedApiResponse<GetListContract>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllContractByCompany(int companyId, [FromQuery] PagingQuery query, [FromQuery] SearchContractDTO searchKey)
         {
-            var result = _contractService.GetContractByCompanyAsync(companyId, query, searchKey);
+            var result = _contractService.GetContractByCompanyAsync(companyId, searchKey);
+            var pagingResult = result.PagedItems(query.PageIndex, query.PageSize).ToList();
+
             var total = searchKey.AreAllPropertiesNull() ? await _contractService.GetTotalItemAsync(companyId)
                                                          : result.Count;
             var paging = new PaginationInfo
@@ -57,10 +64,11 @@ namespace WeHire.API.Controllers
             {
                 Code = StatusCodes.Status200OK,
                 Paging = paging,
-                Data = result
+                Data = pagingResult
             });
         }
 
+        [Authorize]
         [HttpGet("{contractId}")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetContractById(int contractId)
@@ -73,7 +81,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("PreContract")]
         [ProducesResponseType(typeof(ApiResponse<GetPreContract>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPreContract(int developerId, int requestId)
@@ -86,6 +94,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("ContractByDev")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDetail>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetContractByDev(int developerId, int projectId)
@@ -98,6 +107,7 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<GetContractDTO>), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateContract(CreateContractDTO requestBody)
@@ -110,7 +120,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize(Roles = "Admin, Manager")]
         [HttpPut("ConfirmSigned")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ConfirmSignedContract(int contractId)
@@ -123,7 +133,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-
+        [Authorize(Roles = "Admin, Manager")]
         [HttpPut("FailContract")]
         [ProducesResponseType(typeof(ApiResponse<GetContractDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> FailContract(int projectId)

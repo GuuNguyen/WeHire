@@ -9,11 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 using WeHire.Application.DTOs.Developer;
 using WeHire.Application.DTOs.Report;
+using WeHire.Application.Services.NotificationServices;
 using WeHire.Application.Utilities.ErrorHandler;
 using WeHire.Application.Utilities.Helper.Pagination;
 using WeHire.Application.Utilities.Helper.Searching;
 using WeHire.Domain.Entities;
 using WeHire.Infrastructure.IRepositories;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using static WeHire.Application.Utilities.GlobalVariables.GlobalVariable;
 using static WeHire.Domain.Enums.HiredDeveloperEnum;
 using static WeHire.Domain.Enums.ReportEnum;
 
@@ -23,14 +26,15 @@ namespace WeHire.Application.Services.ReportServices
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
-        public ReportService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly INotificationService _notificationService;
+        public ReportService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
-        public List<GetReportModel> GetAllReport(PagingQuery query, SearchReportModel searchKey)
+        public List<GetReportModel> GetAllReport(SearchReportModel searchKey)
         {
             var reports = _unitOfWork.ReportRepository.GetAll()
                                                       .Include(r => r.ReportType)
@@ -43,14 +47,12 @@ namespace WeHire.Application.Services.ReportServices
 
             reports = reports.SearchItems(searchKey);
 
-            reports = reports.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
-
             var mappedReports = _mapper.Map<List<GetReportModel>>(reports);
             return mappedReports;
         }
 
 
-        public List<GetReportModel> GetReportByProject(int companyId, PagingQuery query, SearchReportModel searchKey)
+        public List<GetReportModel> GetReportByCompany(int companyId, SearchReportModel searchKey)
         {
             var reports = _unitOfWork.ReportRepository.Get(r => r.Project.CompanyId == companyId)
                                                       .Include(r => r.ReportType)
@@ -62,8 +64,6 @@ namespace WeHire.Application.Services.ReportServices
                                                       .AsQueryable();
 
             reports = reports.SearchItems(searchKey);
-
-            reports = reports.PagedItems(query.PageIndex, query.PageSize).AsQueryable();
 
             var mappedReports = _mapper.Map<List<GetReportModel>>(reports);
             return mappedReports;
@@ -85,7 +85,13 @@ namespace WeHire.Application.Services.ReportServices
                                                                     .Include(h => h.Developer.HiredDevelopers)
                                                                     .ThenInclude(h => h.Contract)
                                                                     .Include(s => s.Developer.User)
-                                                                    .Select(s => s.Developer)
+                                                                    .Include(s => s.Developer.Gender)
+                                                                    .Include(r => r.Developer.EmploymentType)
+                                                                    .Include(s => s.Developer.Level)
+                                                                    .Include(s => s.Developer.DeveloperTypes)
+                                                                       .ThenInclude(dt => dt.Type)
+                                                                    .Include(s => s.Developer.DeveloperSkills)
+                                                                       .ThenInclude(ds => ds.Skill)
                                                                     .SingleOrDefaultAsync();
             var mappedReport = _mapper.Map<GetReportModel>(report);
             mappedReport.DeveloperInProject = _mapper.Map<GetDeveloperInProject>(developer);
@@ -101,6 +107,7 @@ namespace WeHire.Application.Services.ReportServices
              ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Report", "Report does not exist!!");
             report.Status = (int)ReportStatus.Processing;
             await _unitOfWork.SaveChangesAsync();
+            
             var mappedReports = _mapper.Map<GetReport>(report);
             return mappedReports;
         }
@@ -110,7 +117,11 @@ namespace WeHire.Application.Services.ReportServices
             var hiredDeveloper = await _unitOfWork.HiredDeveloperRepository.Get(h => h.DeveloperId ==  requestModel.DeveloperId &&
                                                                                 h.ProjectId == requestModel.ProjectId &&
                                                                                 h.Status == (int)HiredDeveloperStatus.Working)
-                                                                     .SingleOrDefaultAsync()
+                                                                           .Include(h => h.Project)
+                                                                           .ThenInclude(p => p.Company)
+                                                                           .Include(h => h.Developer)
+                                                                           .ThenInclude(d => d.User)
+                                                                           .SingleOrDefaultAsync()
             ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "HiredDeveloper", "HiredDeveloper does not exist!!");
 
             var newReport = _mapper.Map<Domain.Entities.Report>(requestModel);
@@ -122,6 +133,9 @@ namespace WeHire.Application.Services.ReportServices
             await _unitOfWork.ReportRepository.InsertAsync(newReport);
             await _unitOfWork.SaveChangesAsync();
 
+            await _notificationService.SendManagerNotificationAsync(hiredDeveloper.Project.Company.CompanyName, newReport.ReportId, NotificationTypeString.REPORT,
+            $"{hiredDeveloper.Project.Company.CompanyName} are posted a new report about developer {hiredDeveloper.Developer.User.FirstName} {hiredDeveloper.Developer.User.LastName}.");
+            
             var mappedReports = _mapper.Map<GetReport>(newReport);
             return mappedReports;
         }
@@ -131,7 +145,7 @@ namespace WeHire.Application.Services.ReportServices
             var report = await _unitOfWork.ReportRepository.Get(r => r.ReportId == requestBody.ReportId && 
                                                                      r.Status == (int)ReportStatus.Processing)
                                                            .SingleOrDefaultAsync()
-                ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Report", "Report does not exist!!");
+            ?? throw new ExceptionResponse(HttpStatusCode.BadRequest, "Report", "Report does not exist!!");
 
             report.ResponseContent = requestBody.ResponseContent;
             report.Status = (int)ReportStatus.Done;

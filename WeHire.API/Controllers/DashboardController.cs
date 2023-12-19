@@ -31,6 +31,18 @@ namespace WeHire.API.Controllers
             });
         }
 
+        [HttpGet("ByProject/{projectId}")]
+        [ProducesResponseType(typeof(ApiResponse<DashboardByProject>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetDashboardByProject(int projectId)
+        {
+            var result = await _dashboardService.GetDashboardByProjectAsync(projectId);
+            return Ok(new ApiResponse<DashboardByProject>()
+            {
+                Code = StatusCodes.Status200OK,
+                Data = result
+            });
+        }
+
         [HttpGet("Project")]
         [ProducesResponseType(typeof(ApiResponse<Dictionary<DayOfWeek, int>>), StatusCodes.Status200OK)]
         public IActionResult GetProjectDashboard(DateTime dateInWeek)
