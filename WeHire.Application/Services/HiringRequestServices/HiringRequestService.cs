@@ -53,7 +53,7 @@ namespace WeHire.Application.Services.HiringRequestServices
         {
             IQueryable<HiringRequest> requests = _unitOfWork.RequestRepository.Get(r => r.Status != (int)HiringRequestStatus.Saved)
                                                             .Include(r => r.Company)
-                                                            .OrderBy(n => n.Duration);
+                                                            .OrderByDescending(n => n.CreatedAt);
 
             requests = SearchBySkillIds(requests, searchExtensionKey.SkillIds);
             requests = SearchBySalary(requests, searchExtensionKey);

@@ -154,7 +154,7 @@ namespace WeHire.Application.Services.DeveloperServices
                                                       .ToList();
 
             var matchingDevs = new List<GetMatchingDev>();
-            var developerExistedInRequest = await _unitOfWork.HiredDeveloperRepository.Get(h => h.RequestId == requestId)
+            var developerExistedInRequest = await _unitOfWork.HiredDeveloperRepository.Get(h => h.ProjectId == request.RequestId)
                                                                                       .AsNoTracking()
                                                                                       .Include(h => h.Developer)
                                                                                       .Select(h => h.Developer)

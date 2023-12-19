@@ -43,7 +43,16 @@ namespace WeHire.Application.Services.DashboardServices
             var hiringRequest = _unitOfWork.ReportRepository.Get(h => h.Status != (int)HiringRequestStatus.Saved)
                                                             .AsNoTracking()
                                                             .ToList();
+
+            DateTime firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
             var transaction = _unitOfWork.TransactionRepository.Get(t => t.Status == (int)TransactionStatus.Success).ToList();
+
+            var transactionsInCurrentMonth = transaction
+                .Where(t => t.Timestamp >= firstDayOfMonth && t.Timestamp <= lastDayOfMonth)
+                .ToList();
 
             var totalMoney = transaction.Sum(t => t.Amount) * 8/100;
 
