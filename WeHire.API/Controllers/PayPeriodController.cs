@@ -50,7 +50,7 @@ namespace WeHire.API.Controllers
             });
         }
 
-        [Authorize]
+
         [HttpGet("ExportToExcel/{projectId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ExportToExcelAsync(int projectId, DateTime inputDate)
@@ -58,6 +58,7 @@ namespace WeHire.API.Controllers
             var excelFile = await _payPeriodService.GeneratePayPeriodExcelFile(projectId, inputDate);
             return File(excelFile.ExcelByteArray, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFile.FileName + ".xlsx");
         }
+
 
         [Authorize]
         [HttpPost("ImportExcel/{projectId}")]
