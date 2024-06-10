@@ -21,7 +21,10 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
                 .ForMember(dest => dest.StartDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.StartDate)))
                 .ForMember(dest => dest.EndDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.EndDate)))
                 .ReverseMap();
-            CreateMap<ProfessionalExperience, GetProfessionalExperience>().ReverseMap();
+            CreateMap<ProfessionalExperience, GetProfessionalExperience>()
+                .ForMember(dest => dest.StartDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.StartDate)))
+                .ForMember(dest => dest.EndDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.EndDate)))
+                .ReverseMap();
             CreateMap<ProfessionalExperience, CreateProfessionalExperience>().ReverseMap();
             CreateMap<ProfessionalExperience, UpdateProfessionalExperience>().ReverseMap();
         }
