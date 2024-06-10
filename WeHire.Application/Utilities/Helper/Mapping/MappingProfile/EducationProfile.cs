@@ -14,7 +14,10 @@ namespace WeHire.Application.Utilities.Helper.Mapping.MappingProfile
     {
         public EducationProfile()
         {
-            CreateMap<Education, GetEducationDTO>().ReverseMap();
+            CreateMap<Education, GetEducationDTO>()
+                .ForMember(dest => dest.StartDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.StartDate)))
+                .ForMember(dest => dest.EndDateMMM, opt => opt.MapFrom(src => ConvertDateTime.ConvertDateToString(src.EndDate)))
+                .ReverseMap();
             CreateMap<Education, GetEducationByAdmin>()
                 .ForMember(dest => dest.DeveloperFullName, opt => opt.MapFrom(src => $"{src.Developer.User.FirstName} {src.Developer.User.LastName}"))
                 .ForMember(dest => dest.DeveloperCode, opt => opt.MapFrom(src => src.Developer.CodeName))

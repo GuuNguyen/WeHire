@@ -54,7 +54,7 @@ namespace WeHire.Application.Services.WorkLogServices
             if(updatedWorkLog.TimeIn > updatedWorkLog.TimeOut)
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Worklog", "Time out must greater than time in!!");
 
-            if(updatedWorkLog.TimeIn < new TimeSpan(8, 0, 0) || updatedWorkLog.TimeOut > new TimeSpan(17, 0, 0))
+            if(requestBody.IsPaidLeave == null && (updatedWorkLog.TimeIn < new TimeSpan(8, 0, 0) || updatedWorkLog.TimeOut > new TimeSpan(17, 0, 0)))
                 throw new ExceptionResponse(HttpStatusCode.BadRequest, "Worklog", "Time in must greater than 8 AM and Time out must less than 5 PM");
 
             var paySlip = await _unitOfWork.PaySlipRepository.GetByIdAsync(updatedWorkLog.PaySlipId)
